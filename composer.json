@@ -1,0 +1,17 @@
+{
+    "name": "user/stadion_bot",
+    "autoload": {
+        "psr-4": {
+            "User\\StadionBot\\": "src/"
+        }
+    },
+    "authors": [
+        {
+            "name": "Humoyunmirzo Yoqubjonov",
+            "email": "humoyunmirzoyoqubjonov@gmail.com"
+        }
+    ],
+    "require": {
+        "telegram-bot/api": "^2.3"
+    }
+}
