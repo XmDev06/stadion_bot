@@ -1,8 +1,7 @@
-name = Santiago Bernabeo
-phone_number = 998991112233
-phone_number_2 = 998991112233
-moljal = Nonvoy xona yonida
-lotitude = 40.849122
-longitude = 72.070335
-narxi = 40000
-viloyat = 1
+name = Bunyodkor stadioni;
+phone_number = 998991112233;
+moljal = Baliqxona yonida ongga yurganda;
+lotitude = 40.849122;
+longitude = 72.070335;
+narxi = 3k4rr49;
+viloyat = 1;

@@ -64,6 +64,9 @@ $bot->callbackQuery(static function (\TelegramBot\Api\Types\CallbackQuery $callb
         if ($data == "phone_number_2"){
             $bot->sendMessage($chatId, "Tahminiy mo'ljal kiriting 📍");
             $connection->query("update users set status = 'moljal' where chat_id='$chatId'");
+            $myfile = fopen("session/$chatId.txt", "a") or die("Unable to open file!");
+            fwrite($myfile, "phone_2=null;");
+            fclose($myfile);
             $bot->deleteMessage($chatId, $messageId);
         }
 
@@ -81,8 +84,8 @@ $bot->callbackQuery(static function (\TelegramBot\Api\Types\CallbackQuery $callb
             $bot->sendMessage($chatId, "Tumanni tanlang 👇👇👇 ", null, false, null, $tuman_btn);
             $connection->query("update users set status = 'tuman' where chat_id='$chatId'");
 
-            $myfile = fopen("info.txt", "a");
-            fwrite($myfile, "viloyat = ".$viloyat_id."\n");
+            $myfile = fopen("session/$chatId.txt", "a");
+            fwrite($myfile, "viloyat=".$viloyat_id.";");
             fclose($myfile);
             $bot->deleteMessage($chatId, $messageId);
         }
@@ -90,14 +93,82 @@ $bot->callbackQuery(static function (\TelegramBot\Api\Types\CallbackQuery $callb
         if (strpos($data, "tuman_") !== false){
             $tuman_id = explode("_", $data)[1];
 
-            $data = file_get_contents('info.txt');
-            $mas = explode('=', $data);
-            var_dump($mas);
-            $btn = new \TelegramBot\Api\Types\Inline\InlineKeyboardMarkup([[['text'=>"Qayta to'ldirish", "callback_data"=>"reset"],['text'=>"Tasdiqlash 👍", "callback_data"=>"tasdiqlash"]]]);
-            $bot->sendMessage($chatId, "text boladi", null, false, null, $btn);
-//            $connection->query("update users set status = 'tasdiqlash' where chat_id='$chatId'");
+            $myfile = fopen("session/$chatId.txt", "a");
+            fwrite($myfile, "tuman=".$tuman_id.";");
+            fclose($myfile);
 
-//            $bot->deleteMessage($chatId, $messageId);
+            $tuman =  $connection->query("select name from tumanlars where id = $tuman_id")->fetch_assoc()['name'];
+            $moljal = '';
+            $name = '';
+            $phone = '';
+            $phone_2 = '';
+            $viloyat = '';
+            $narx = '';
+
+            $data = file_get_contents("session/$chatId.txt");
+            $data_massiv = explode(';', $data);
+
+            foreach ($data_massiv as $item) {
+                $keylar = explode('=', $item);
+                if ($keylar[0] == 'name'){
+                    $name .= $keylar[1];
+                }
+                if($keylar[0]== 'moljal'){
+                    $moljal .= $keylar[1];
+                }
+                if($keylar[0]== 'phone'){
+                    $phone .= $keylar[1];
+                }
+                if($keylar[0]== 'phone_2' && $keylar[1] !== "null"){
+                    $phone_2 .= $keylar[1];
+                }
+                if($keylar[0]== 'viloyat'){
+                    $viloyat = $connection->query("select name from viloyatlars where id = $keylar[1]")->fetch_assoc()['name'];
+                }
+                if ($keylar[0] == 'narxi'){
+                    $narx .= $keylar[1];
+                }
+            }
+
+            $phone_number_2 = '';
+            if ($phone_2 !== ''){
+                $phone_number_2 .= "📞 Bog'lanish uchun raqam 2: +$phone_2\n";
+            }
+            $text = "🏟 Stadion nomi:  $name\n‍📞 Bog'lanish uchun raqam: +$phone\n$phone_number_2\n📍 Stadion joylashgan joy: $viloyat viloyati, $tuman tumani\n📍 Mo'ljal: $moljal\n\n⏱ Soatlik narxi:  $narx\n ";
+
+
+            $btn = new \TelegramBot\Api\Types\Inline\InlineKeyboardMarkup([[['text'=>"Qayta to'ldirish", "callback_data"=>"reset"],['text'=>"Tasdiqlash 👍", "callback_data"=>"tasdiqlash"]]]);
+            $bot->sendMessage($chatId, $text, null, false, null, $btn);
+            $connection->query("update users set status = 'tasdiqlash' where chat_id='$chatId'");
+
+            $bot->deleteMessage($chatId, $messageId);
+        }
+
+        if ($data == 'tasdiqlash'){
+            $data = file_get_contents("session/$chatId.txt");
+            $data_massiv = explode(';', $data);
+            $user_id ='';
+            $key = '';
+            $value = '';
+            foreach ($data_massiv as $item) {
+                $keylar = explode('=', $item);
+                $key .= $keylar[0].",";
+                if ($keylar[1]== "null"){
+                    $value .= $keylar[1].",";
+                }else{
+                    $value .= '"'.$keylar[1].'",';
+                }
+            }
+            $key = substr($key, 0,-2);
+            $value = substr($value, 0,-4);
+
+            $test = $connection->query("insert into stadions ($key) values ($value)");
+            var_dump("insert into stadions ($key) values ($value)");
+            if ($test){
+                $bot->sendMessage($chatId, 'zooor');
+            }else{
+                $bot->sendMessage($chatId, 'noooo');
+            }
         }
 
     } catch (Exception $exception) {
@@ -113,7 +184,7 @@ $bot->on(static function () {
             $chat_id = $update->getMessage()->getChat()->getId();
             $text = $update->getMessage()->getText();
             $messageId = $update->getMessage()->getMessageId();
-
+            $user_id = $connection->query("select id from users where chat_id='$chat_id'")->fetch_assoc()['id'];
             $is_verified = $connection->query("select * from users where chat_id='$chat_id'")->num_rows;
             $status = $connection->query("select status from users where chat_id='$chat_id'")->fetch_assoc()['status'];
 
@@ -133,7 +204,7 @@ $bot->on(static function () {
                 $verify = password_verify($text, $password_hash);
                 if ($verify) {
                     $name = $connection->query("select name from users where chat_id='$chat_id'")->fetch_assoc()['name'];
-                    $user_id = $connection->query("select id from users where chat_id='$chat_id'")->fetch_assoc()['id'];
+
                     $stadions = $connection->query("select * from stadions where user_id = '$user_id'")->fetch_all();
 
                     $button = [[]];
@@ -157,8 +228,8 @@ $bot->on(static function () {
                 $filter = preg_match("/^[a-zA-Z '`‘]*$/", $text);
                 if ($filter===1){
                     $connection->query("INSERT INTO `stadions`(`name`, `phone`, `narxi`, `user_id`, `viloyat`, `tuman`) values('$text',null)");
-                    $myfile = fopen("info.txt", "w") or die("Unable to open file!");
-                    fwrite($myfile, "name = ".$text."\n");
+                    $myfile = fopen("session/$chat_id.txt", "w") or die("Unable to open file!");
+                    fwrite($myfile, "name=".$text.";");
                     fclose($myfile);
                     $connection->query("update users set status = 'phone_number' where chat_id='$chat_id'");
                     $bot->sendMessage($chat_id, "Bog'lanish uchun telefon raqam kiriting ☎️\n(Na'muna: 998991112233)");
@@ -176,8 +247,8 @@ $bot->on(static function () {
                     $bot->sendMessage($chat_id, "Qo'shimcha telefon raqam mavjud bo'lsa kiriting☎️\n(Na'muna: 998991112233)", null, false, null, $next_btn);
                     $connection->query("update users set status = 'phone_number_2' where chat_id='$chat_id'");
 
-                    $myfile = fopen("info.txt", "a");
-                    fwrite($myfile, "phone_number = ".$text."\n");
+                    $myfile = fopen("session/$chat_id.txt", "a");
+                    fwrite($myfile, "phone=".$text.";");
                     fclose($myfile);
                 }else{
                     $bot->sendMessage($chat_id, "❗️ Iltimos, telefon raqamni namunadagidek kiriting");
@@ -189,8 +260,8 @@ $bot->on(static function () {
                 if ($filter_number === 1){
                     $bot->sendMessage($chat_id, "Tahminiy mo'ljal kiriting 📍");
                     $connection->query("update users set status = 'moljal' where chat_id='$chat_id'");
-                    $myfile = fopen("info.txt", "a");
-                    fwrite($myfile, "phone_number_2 = ".$text."\n");
+                    $myfile = fopen("session/$chat_id.txt", "a");
+                    fwrite($myfile, "phone_2=".$text.";");
                     fclose($myfile);
                 }else{
                     $bot->sendMessage($chat_id, "❗️ Iltimos, telefon raqamni namunadagidek kiriting");
@@ -198,8 +269,8 @@ $bot->on(static function () {
             }
 
             if ($status == 'moljal'){
-                $myfile = fopen("info.txt", "a");
-                fwrite($myfile, "moljal = ".$text."\n");
+                $myfile = fopen("session/$chat_id.txt", "a");
+                fwrite($myfile, "moljal=".$text.";");
                 fclose($myfile);
                 $bot->sendMessage($chat_id, "Stadion lacatsiyasini tashlang 📍");
                 $connection->query("update users set status = 'location' where chat_id='$chat_id'");
@@ -208,20 +279,21 @@ $bot->on(static function () {
             if ($status == 'location'){
                 $latitude = $update->getMessage()->getLocation()->getLatitude();
                 $longitude = $update->getMessage()->getLocation()->getLongitude();
-                $myfile = fopen("info.txt", "a");
-                fwrite($myfile, "lotitude = ".$latitude."\n");
-                fwrite($myfile, "longitude = ".$longitude."\n");
+                $myfile = fopen("session/$chat_id.txt", "a");
+                fwrite($myfile, "latitude=".$latitude.";");
+                fwrite($myfile, "longitude=".$longitude.";");
                 fclose($myfile);
 
                 $bot->sendMessage($chat_id, "Stadion narxini so'mda kiriting 💰 (Na'muna: 50000)");
                 $connection->query("update users set status = 'narx' where chat_id='$chat_id'");
             }
 
-            if ($status== "narx"){
+            if ($status == "narx"){
                 $filter_narx = preg_match("/^[0-9]/", $text);
                 if ($filter_narx === 1){
-                    $myfile = fopen("info.txt", "a");
-                    fwrite($myfile, "narxi = ".$text."\n");
+                    $myfile = fopen("session/$chat_id.txt", "a");
+                    fwrite($myfile, "narxi=".$text.";");
+                    fwrite($myfile, "user_id=".$user_id.";");
                     fclose($myfile);
 
 
