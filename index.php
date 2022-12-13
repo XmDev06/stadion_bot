@@ -3,7 +3,7 @@ require_once __DIR__ . '/vendor/autoload.php';
 include 'config.php';
 
 $botToken = "5812515378:AAF8J9hvRbx5EULNJZ3I49jNg5slJIgIJT0";
-// https://api.telegram.org/bot5812515378:AAF8J9hvRbx5EULNJZ3I49jNg5slJIgIJT0/setWebhook?url=https://4f44-188-113-236-77.in.ngrok.io/stadion_bot/index.php
+// https://api.telegram.org/bot5812515378:AAF8J9hvRbx5EULNJZ3I49jNg5slJIgIJT0/setWebhook?url=https://3dfd-188-113-217-30.in.ngrok.io/stadion_bot/index.php
 
 /**
  * @var $bot \TelegramBot\Api\Client | \TelegramBot\Api\BotApi
@@ -34,8 +34,8 @@ $bot->callbackQuery(static function (\TelegramBot\Api\Types\CallbackQuery $callb
 
         $chatId = $callbackquery->getMessage()->getChat()->getId();
         $data = $callbackquery->getData();
-        $firstname = $callbackquery->getMessage()->getChat()->getFirstName();
         $messageId = $callbackquery->getMessage()->getMessageId();
+        $userId = $connection->query("select id from users where chat_id='$chatId'")->fetch_assoc()['id'];
 
         if ($data == "createStd") {
             $bot->sendMessage($chatId, "Yangi stadion yaratish uchun Stadion nomini kiriting: ");
@@ -56,9 +56,9 @@ $bot->callbackQuery(static function (\TelegramBot\Api\Types\CallbackQuery $callb
             }
             $text = "🏟 Stadion nomi:  $stadion[1]\n👨‍💼 Ma'sul: $ega\n\n📞 Bog'lanish uchun raqam: +$stadion[2]\n$phone_2 \n📍 Stadion joylashgan joy: $viloyat viloyati, $tuman tumani\n📍 Mo'ljal: $stadion[4]\n\n⏱ Soatlik narxi:  $stadion[5]\n ";
 
-            $button = new \TelegramBot\Api\Types\Inline\InlineKeyboardMarkup([[['text' => '⏰ Stadion vaqtlari', 'callback_data' => 'std_vaqtlari']], [['text' => '⚙️ Tahrirlash', 'callback_data' => 'std_edit']]]);
-//            $bot->sendLocation($chatId,'40.84894','72.069785');///////////////////////////////////////////////////bazadan opkelish kerag!!!
+            $button = new \TelegramBot\Api\Types\Inline\InlineKeyboardMarkup([[['text' => '⏰ Stadion vaqtlari', 'callback_data' => 'std_vaqtlari']], [['text' => '⚙️ Tahrirlash', 'callback_data' => "stdEdit_$stadion_id"], ['text'=>"⛔️ Stadionni o'chirish", 'callback_data'=>"deleteStd_boshMenu_$stadion_id"]],[['text'=>"Bosh menyu 🏘", 'callback_data'=>'boshMenu']]]);
             $bot->sendMessage($chatId, $text, null, false, false, $button);
+            $bot->deleteMessage($chatId, $messageId);
         }
 
         if ($data == "phone_number_2"){
@@ -137,7 +137,7 @@ $bot->callbackQuery(static function (\TelegramBot\Api\Types\CallbackQuery $callb
             $text = "🏟 Stadion nomi:  $name\n‍📞 Bog'lanish uchun raqam: +$phone\n$phone_number_2\n📍 Stadion joylashgan joy: $viloyat viloyati, $tuman tumani\n📍 Mo'ljal: $moljal\n\n⏱ Soatlik narxi:  $narx\n ";
 
 
-            $btn = new \TelegramBot\Api\Types\Inline\InlineKeyboardMarkup([[['text'=>"Qayta to'ldirish", "callback_data"=>"reset"],['text'=>"Tasdiqlash 👍", "callback_data"=>"tasdiqlash"]]]);
+            $btn = new \TelegramBot\Api\Types\Inline\InlineKeyboardMarkup([[['text'=>"Qayta to'ldirish ♻️", "callback_data"=>"createStd"],['text'=>"Tasdiqlash 👍", "callback_data"=>"tasdiqlash"]],[['text'=>"Bosh menyu 🏘", 'callback_data'=>'boshMenu']]]);
             $bot->sendMessage($chatId, $text, null, false, null, $btn);
             $connection->query("update users set status = 'tasdiqlash' where chat_id='$chatId'");
 
@@ -163,12 +163,117 @@ $bot->callbackQuery(static function (\TelegramBot\Api\Types\CallbackQuery $callb
             $value = substr($value, 0,-4);
 
             $test = $connection->query("insert into stadions ($key) values ($value)");
-            var_dump("insert into stadions ($key) values ($value)");
+
             if ($test){
-                $bot->sendMessage($chatId, 'zooor');
+
+                $stadions = $connection->query("select * from stadions where user_id = '$userId'")->fetch_all();
+
+                $button = [[]];
+                foreach ($stadions as $stadion) {
+                    $button[0][] = ["text" => "🏟 $stadion[1]", "callback_data" => "stadion_$stadion[0]"];
+                }
+                array_push($button[0], ["text" => '🆕 Stadion yaratish', "callback_data" => "createStd"]);
+                $button = array_chunk($button[0], 2);
+
+                $b = new \TelegramBot\Api\Types\Inline\InlineKeyboardMarkup($button);
+                $bot->sendMessage($chatId, "Bo'limlardan birini tanlang", null, false, false, $b);
+
+                unlink("session/$chatId.txt");
+//                $connection->query("update users set status = 'password' where chat_id='$chatId'");
             }else{
-                $bot->sendMessage($chatId, 'noooo');
+                $bot->sendMessage($chatId, "Bog'lanishdagi xatolik");
             }
+        }
+
+        if (strpos($data, 'deleteStd_') !== false){
+            $stadion_id = explode('_', $data)[2];
+            $delete_test = $connection->query("delete from stadions where id = '$stadion_id'");
+            if ($delete_test){
+                $bot->sendMessage($chatId, "Stadion o'chirib tashlandi ✅");
+                $connection->query("update users set status = 'stadion' where chat_id='$chatId'");
+            }else{
+                $bot->sendMessage($chatId, "Stadionni o'chirib bo'lmadi dasturchi bilan bog'laning ✅");
+            }
+        }
+
+        if (strpos($data, 'boshMenu') !== false){
+            $stadions = $connection->query("select * from stadions where user_id = '$userId'")->fetch_all();
+
+            $button = [[]];
+            foreach ($stadions as $stadion) {
+                $button[0][] = ["text" => "🏟 $stadion[1]", "callback_data" => "stadion_$stadion[0]"];
+            }
+            array_push($button[0], ["text" => '🆕 Stadion yaratish', "callback_data" => "createStd"]);
+            $button = array_chunk($button[0], 2);
+
+            $b = new \TelegramBot\Api\Types\Inline\InlineKeyboardMarkup($button);
+            $bot->sendMessage($chatId, "Bo'limlardan birini tanlang", null, false, false, $b);
+            $bot->deleteMessage($chatId, $messageId);
+        }
+
+        ////////// Stadion EDIT  /////////
+
+        if (strpos($data, 'stdEdit') !== false){
+            $stadion_id = explode("_", $data)[1];
+            $btn = new \TelegramBot\Api\Types\Inline\InlineKeyboardMarkup([
+                [['text'=>'Nomi 🔤', 'callback_data'=>"name_$stadion_id"],['text'=>'Narxi 💵', 'callback_data'=>"narx_$stadion_id"]],
+                [['text'=>'Tel raqam 1 📲', 'callback_data'=>"phone1_$stadion_id"],['text'=>'Tel raqam 2 📲', 'callback_data'=>"phone2_$stadion_id"]],
+                [['text'=>'Mo\'ljal 📍', 'callback_data'=>"manzil_$stadion_id"],['text'=>'Locatsiya 🗺', 'callback_data'=>"location_$stadion_id"]],
+                [['text'=>"Bosh menyu 🏘", 'callback_data'=>'boshMenu']]
+            ]);
+
+            $stadion = $connection->query("select * from stadions where id = '$stadion_id'")->fetch_all()[0];
+            var_dump($stadion);
+            $ega = $connection->query("select name from users where id = '$stadion[6]'")->fetch_assoc()["name"];
+            $viloyat = $connection->query("select name from viloyatlars where id = '$stadion[7]'")->fetch_assoc()['name'];
+            $tuman = $connection->query("select name from tumanlars where id = '$stadion[8]'")->fetch_assoc()['name'];
+            var_dump($stadion);
+            $phone_2 = '';
+            if ($stadion[3]!== null){
+                $phone_2 .= "📞 Bog'lanish uchun raqam 2: +$stadion[3]\n";
+            }
+            $text = "🏟 Stadion nomi:  $stadion[1]\n👨‍💼 Ma'sul: $ega\n\n📞 Bog'lanish uchun raqam: +$stadion[2]\n$phone_2 \n📍 Stadion joylashgan joy: $viloyat viloyati, $tuman tumani\n📍 Mo'ljal: $stadion[4]\n\n⏱ Soatlik narxi:  $stadion[5]\n\nTahrirlash uchun quyidagi bo'limlardan birini tanlang 👇👇👇 ";
+
+
+            $bot->sendMessage($chatId, $text,null, false, null, $btn);
+            $bot->deleteMessage($chatId, $messageId);
+        }
+
+        if (strpos($data, 'name_')!==false){
+            $id = explode('_', $data)[1];
+            $bot->sendMessage($chatId, 'Yangi nom kiriting');
+            $nameEdit = "nameEdit_$id";
+            $connection->query("update users set status = '$nameEdit' where chat_id='$chatId'");
+        }
+        if (strpos($data, 'narx_')!==false){
+            $id = explode('_', $data)[1];
+            $bot->sendMessage($chatId, 'Yangi summani kiriting');
+            $nameEdit = "narxEdit_$id";
+            $connection->query("update users set status = '$nameEdit' where chat_id='$chatId'");
+        }
+        if (strpos($data, 'phone1_')!==false){
+            $id = explode('_', $data)[1];
+            $bot->sendMessage($chatId, 'Yangi telefon raqamini kiriting. (Namuna: 998991112233)');
+            $nameEdit = "phone1Edit_$id";
+            $connection->query("update users set status = '$nameEdit' where chat_id='$chatId'");
+        }
+        if (strpos($data, 'phone2_')!==false){
+            $id = explode('_', $data)[1];
+            $bot->sendMessage($chatId, 'Yangi ikkinchi telefon raqamini kiriting. (Namuna: 998991112233)');
+            $nameEdit = "phone2Edit_$id";
+            $connection->query("update users set status = '$nameEdit' where chat_id='$chatId'");
+        }
+        if (strpos($data, 'manzil_')!==false){
+            $id = explode('_', $data)[1];
+            $bot->sendMessage($chatId, "Yangi mo'ljalni kiriting");
+            $nameEdit = "manzilEdit_$id";
+            $connection->query("update users set status = '$nameEdit' where chat_id='$chatId'");
+        }
+        if (strpos($data, 'location_')!==false){
+            $id = explode('_', $data)[1];
+            $bot->sendMessage($chatId, "Yangi locatsiyani jo'nating");
+            $nameEdit = "locationEdit_$id";
+            $connection->query("update users set status = '$nameEdit' where chat_id='$chatId'");
         }
 
     } catch (Exception $exception) {
@@ -188,6 +293,8 @@ $bot->on(static function () {
             $is_verified = $connection->query("select * from users where chat_id='$chat_id'")->num_rows;
             $status = $connection->query("select status from users where chat_id='$chat_id'")->fetch_assoc()['status'];
 
+
+            ///////////  CREAT STADION START //////////////////
 
             if ($status == null) {
                 $number = $connection->query("select * from users where is_admin='2' and phone='$text'")->num_rows;
@@ -217,28 +324,30 @@ $bot->on(static function () {
                     $b = new \TelegramBot\Api\Types\Inline\InlineKeyboardMarkup($button);
                     $bot->sendMessage($chat_id, "Xush kelibsiz $name, bo'limlardan birini tanlang", null, false, false, $b);
 
-//                    $connection->query("update users set status = 'stadion' where chat_id='$chat_id'");
+                    $connection->query("update users set status = 'stadion' where chat_id='$chat_id'");
                 } else {
                     $bot->sendMessage($chat_id, "❗️Parolni noto'g'ri, qaytadan urinib ko'ring");
                 }
             }
 
-
             if ($status == "create_stadion" && $text) {
                 $filter = preg_match("/^[a-zA-Z '`‘]*$/", $text);
                 if ($filter===1){
                     $connection->query("INSERT INTO `stadions`(`name`, `phone`, `narxi`, `user_id`, `viloyat`, `tuman`) values('$text',null)");
-                    $myfile = fopen("session/$chat_id.txt", "w") or die("Unable to open file!");
-                    fwrite($myfile, "name=".$text.";");
-                    fclose($myfile);
-                    $connection->query("update users set status = 'phone_number' where chat_id='$chat_id'");
-                    $bot->sendMessage($chat_id, "Bog'lanish uchun telefon raqam kiriting ☎️\n(Na'muna: 998991112233)");
-
+                    $std_unique = $connection->query("select name from stadions where name = '$text' and user_id = '$user_id'")->num_rows;
+                    if ($std_unique == 0) {
+                        $myfile = fopen("session/$chat_id.txt", "w") or die("Unable to open file!");
+                        fwrite($myfile, "name=" . $text . ";");
+                        fclose($myfile);
+                        $connection->query("update users set status = 'phone_number' where chat_id='$chat_id'");
+                        $bot->sendMessage($chat_id, "Bog'lanish uchun telefon raqam kiriting ☎️\n(Na'muna: 998991112233)");
+                    }else{
+                        $bot->sendMessage($chat_id,"❗Sizda ushbu nomdagi stadion mavjud");
+                    }
                 }else{
                     $bot->sendMessage($chat_id,"❗Stadion nomida faqat harflar qatnashgan so'zlardan foydalaning");
                 }
             }
-
 
             if ($status == 'phone_number' && $text){
                 $filter_number = preg_match("/^[0-9]{12,12}/", $text);
@@ -313,6 +422,186 @@ $bot->on(static function () {
                 }
             }
 
+            ///////////  CREAT STADION END //////////////////
+
+            ///////////  Edit STADION START //////////////////
+
+            if (strpos($status, 'nameEdit')!==false){
+                $stadion_id = explode('_', $status)[1];
+                $filter = preg_match("/^[a-zA-Z '`‘]*$/", $text);
+                $std_unique = $connection->query("select name from stadions where name = '$text' and user_id = $user_id")->num_rows;
+                if ($filter === 1 && $std_unique == 0){
+                    $connection->query("update stadions set name = '$text' where id = $stadion_id");
+                    $connection->query("update users set status = '0' where chat_id = $chat_id");
+                    $bot->sendMessage($chat_id,"Sizning stadioningiz nomi muaffaqiyatli o'zgartirildi");
+
+                    $btn = new \TelegramBot\Api\Types\Inline\InlineKeyboardMarkup([
+                        [['text'=>'Nomi 🔤', 'callback_data'=>"name_$stadion_id"],['text'=>'Narxi 💵', 'callback_data'=>'narx_edit']],
+                        [['text'=>'Tel raqam 1 📲', 'callback_data'=>'phone_edit1'],['text'=>'Tel raqam 2 📲', 'callback_data'=>'phone_edit2']],
+                        [['text'=>'Mo\'ljal 📍', 'callback_data'=>'manzil_edit'],['text'=>'Locatsiya 🗺', 'callback_data'=>'location_edit']],
+                        [['text'=>"Bosh menyu 🏘", 'callback_data'=>'boshMenu']]
+                    ]);
+
+                    $stadion = $connection->query("select * from stadions where id = '$stadion_id'")->fetch_all()[0];
+                    var_dump($stadion);
+                    $ega = $connection->query("select name from users where id = '$stadion[6]'")->fetch_assoc()["name"];
+                    $viloyat = $connection->query("select name from viloyatlars where id = '$stadion[7]'")->fetch_assoc()['name'];
+                    $tuman = $connection->query("select name from tumanlars where id = '$stadion[8]'")->fetch_assoc()['name'];
+
+                    $phone_2 = '';
+                    if ($stadion[3]!== null){
+                        $phone_2 .= "📞 Bog'lanish uchun raqam 2: +$stadion[3]\n";
+                    }
+                    $text = "🏟 Stadion nomi:  $stadion[1]\n👨‍💼 Ma'sul: $ega\n\n📞 Bog'lanish uchun raqam: +$stadion[2]\n$phone_2 \n📍 Stadion joylashgan joy: $viloyat viloyati, $tuman tumani\n📍 Mo'ljal: $stadion[4]\n\n⏱ Soatlik narxi:  $stadion[5]\n\nTahrirlash uchun quyidagi bo'limlardan birini tanlang 👇👇👇 ";
+                    $bot->sendMessage($chat_id, $text,null, false, null, $btn);
+                }
+            }
+
+            if (strpos($status, 'narxEdit_')!==false){
+                $stadion_id = explode('_', $status)[1];
+                $filter = preg_match("/^[a-zA-Z]/", $text);
+                if ($filter === 0){
+                    $connection->query("update stadions set narxi = '$text' where id = $stadion_id");
+                    $connection->query("update users set status = '0' where chat_id = $chat_id");
+                    $bot->sendMessage($chat_id,"Sizning stadioningiz narxi muaffaqiyatli o'zgartirildi");
+
+                    $btn = new \TelegramBot\Api\Types\Inline\InlineKeyboardMarkup([
+                        [['text'=>'Nomi 🔤', 'callback_data'=>"name_$stadion_id"],['text'=>'Narxi 💵', 'callback_data'=>"narx_$stadion_id"]],
+                        [['text'=>'Tel raqam 1 📲', 'callback_data'=>"phone1_$stadion_id"],['text'=>'Tel raqam 2 📲', 'callback_data'=>"phone2_$stadion_id"]],
+                        [['text'=>'Mo\'ljal 📍', 'callback_data'=>"manzil_$stadion_id"],['text'=>'Locatsiya 🗺', 'callback_data'=>"location_$stadion_id"]],
+                        [['text'=>"Bosh menyu 🏘", 'callback_data'=>'boshMenu']]
+                    ]);
+
+                    $stadion = $connection->query("select * from stadions where id = '$stadion_id'")->fetch_all()[0];
+                    var_dump($stadion);
+                    $ega = $connection->query("select name from users where id = '$stadion[6]'")->fetch_assoc()["name"];
+                    $viloyat = $connection->query("select name from viloyatlars where id = '$stadion[7]'")->fetch_assoc()['name'];
+                    $tuman = $connection->query("select name from tumanlars where id = '$stadion[8]'")->fetch_assoc()['name'];
+
+                    $phone_2 = '';
+                    if ($stadion[3]!== null){
+                        $phone_2 .= "📞 Bog'lanish uchun raqam 2: +$stadion[3]\n";
+                    }
+                    $text = "🏟 Stadion nomi:  $stadion[1]\n👨‍💼 Ma'sul: $ega\n\n📞 Bog'lanish uchun raqam: +$stadion[2]\n$phone_2 \n📍 Stadion joylashgan joy: $viloyat viloyati, $tuman tumani\n📍 Mo'ljal: $stadion[4]\n\n⏱ Soatlik narxi:  $stadion[5]\n\nTahrirlash uchun quyidagi bo'limlardan birini tanlang 👇👇👇 ";
+                    $bot->sendMessage($chat_id, $text,null, false, null, $btn);
+                }
+            }
+
+            if (strpos($status, 'phone1Edit_')!==false){
+                $stadion_id = explode('_', $status)[1];
+                $filter = preg_match("/^[0-9]{12,12}/", $text);
+                if ($filter === 1){
+                    $connection->query("update stadions set phone = '$text' where id = $stadion_id");
+                    $connection->query("update users set status = '0' where chat_id = $chat_id");
+                    $bot->sendMessage($chat_id,"Sizning stadioningiz telefon raqami muaffaqiyatli o'zgartirildi");
+
+                    $btn = new \TelegramBot\Api\Types\Inline\InlineKeyboardMarkup([
+                        [['text'=>'Nomi 🔤', 'callback_data'=>"name_$stadion_id"],['text'=>'Narxi 💵', 'callback_data'=>"narx_$stadion_id"]],
+                        [['text'=>'Tel raqam 1 📲', 'callback_data'=>"phone1_$stadion_id"],['text'=>'Tel raqam 2 📲', 'callback_data'=>"phone2_$stadion_id"]],
+                        [['text'=>'Mo\'ljal 📍', 'callback_data'=>"manzil_$stadion_id"],['text'=>'Locatsiya 🗺', 'callback_data'=>"location_$stadion_id"]],
+                        [['text'=>"Bosh menyu 🏘", 'callback_data'=>'boshMenu']]
+                    ]);
+
+                    $stadion = $connection->query("select * from stadions where id = '$stadion_id'")->fetch_all()[0];
+                    $ega = $connection->query("select name from users where id = '$stadion[6]'")->fetch_assoc()["name"];
+                    $viloyat = $connection->query("select name from viloyatlars where id = '$stadion[7]'")->fetch_assoc()['name'];
+                    $tuman = $connection->query("select name from tumanlars where id = '$stadion[8]'")->fetch_assoc()['name'];
+
+                    $phone_2 = '';
+                    if ($stadion[3]!== null){
+                        $phone_2 .= "📞 Bog'lanish uchun raqam 2: +$stadion[3]\n";
+                    }
+                    $text = "🏟 Stadion nomi:  $stadion[1]\n👨‍💼 Ma'sul: $ega\n\n📞 Bog'lanish uchun raqam: +$stadion[2]\n$phone_2 \n📍 Stadion joylashgan joy: $viloyat viloyati, $tuman tumani\n📍 Mo'ljal: $stadion[4]\n\n⏱ Soatlik narxi:  $stadion[5]\n\nTahrirlash uchun quyidagi bo'limlardan birini tanlang 👇👇👇 ";
+                    $bot->sendMessage($chat_id, $text,null, false, null, $btn);
+                }
+            }
+
+            if (strpos($status, 'phone2Edit_')!==false){
+                $stadion_id = explode('_', $status)[1];
+                $filter = preg_match("/^[0-9]{12,12}/", $text);
+                if ($filter === 1){
+                    $connection->query("update stadions set phone_2 = '$text' where id = $stadion_id");
+                    $connection->query("update users set status = '0' where chat_id = $chat_id");
+                    $bot->sendMessage($chat_id,"Sizning stadioningiz ikkinchi telefon raqami muaffaqiyatli o'zgartirildi");
+
+                    $btn = new \TelegramBot\Api\Types\Inline\InlineKeyboardMarkup([
+                        [['text'=>'Nomi 🔤', 'callback_data'=>"name_$stadion_id"],['text'=>'Narxi 💵', 'callback_data'=>"narx_$stadion_id"]],
+                        [['text'=>'Tel raqam 1 📲', 'callback_data'=>"phone1_$stadion_id"],['text'=>'Tel raqam 2 📲', 'callback_data'=>"phone2_$stadion_id"]],
+                        [['text'=>'Mo\'ljal 📍', 'callback_data'=>"manzil_$stadion_id"],['text'=>'Locatsiya 🗺', 'callback_data'=>"location_$stadion_id"]],
+                        [['text'=>"Bosh menyu 🏘", 'callback_data'=>'boshMenu']]
+                    ]);
+
+                    $stadion = $connection->query("select * from stadions where id = '$stadion_id'")->fetch_all()[0];
+                    $ega = $connection->query("select name from users where id = '$stadion[6]'")->fetch_assoc()["name"];
+                    $viloyat = $connection->query("select name from viloyatlars where id = '$stadion[7]'")->fetch_assoc()['name'];
+                    $tuman = $connection->query("select name from tumanlars where id = '$stadion[8]'")->fetch_assoc()['name'];
+
+                    $phone_2 = '';
+                    if ($stadion[3]!== null){
+                        $phone_2 .= "📞 Bog'lanish uchun raqam 2: +$stadion[3]\n";
+                    }
+                    $text = "🏟 Stadion nomi:  $stadion[1]\n👨‍💼 Ma'sul: $ega\n\n📞 Bog'lanish uchun raqam: +$stadion[2]\n$phone_2 \n📍 Stadion joylashgan joy: $viloyat viloyati, $tuman tumani\n📍 Mo'ljal: $stadion[4]\n\n⏱ Soatlik narxi:  $stadion[5]\n\nTahrirlash uchun quyidagi bo'limlardan birini tanlang 👇👇👇 ";
+                    $bot->sendMessage($chat_id, $text,null, false, null, $btn);
+                }
+            }
+
+            if (strpos($status, 'manzilEdit_')!==false){
+                $stadion_id = explode('_', $status)[1];
+
+                    $connection->query("update stadions set moljal = '$text' where id = $stadion_id");
+                    $connection->query("update users set status = '0' where chat_id = $chat_id");
+                    $bot->sendMessage($chat_id,"Sizning stadioningiz manzili muaffaqiyatli o'zgartirildi");
+
+                    $btn = new \TelegramBot\Api\Types\Inline\InlineKeyboardMarkup([
+                        [['text'=>'Nomi 🔤', 'callback_data'=>"name_$stadion_id"],['text'=>'Narxi 💵', 'callback_data'=>"narx_$stadion_id"]],
+                        [['text'=>'Tel raqam 1 📲', 'callback_data'=>"phone1_$stadion_id"],['text'=>'Tel raqam 2 📲', 'callback_data'=>"phone2_$stadion_id"]],
+                        [['text'=>'Mo\'ljal 📍', 'callback_data'=>"manzil_$stadion_id"],['text'=>'Locatsiya 🗺', 'callback_data'=>"location_$stadion_id"]],
+                        [['text'=>"Bosh menyu 🏘", 'callback_data'=>'boshMenu']]
+                    ]);
+
+                    $stadion = $connection->query("select * from stadions where id = '$stadion_id'")->fetch_all()[0];
+                    $ega = $connection->query("select name from users where id = '$stadion[6]'")->fetch_assoc()["name"];
+                    $viloyat = $connection->query("select name from viloyatlars where id = '$stadion[7]'")->fetch_assoc()['name'];
+                    $tuman = $connection->query("select name from tumanlars where id = '$stadion[8]'")->fetch_assoc()['name'];
+
+                    $phone_2 = '';
+                    if ($stadion[3]!== null){
+                        $phone_2 .= "📞 Bog'lanish uchun raqam 2: +$stadion[3]\n";
+                    }
+                    $text = "🏟 Stadion nomi:  $stadion[1]\n👨‍💼 Ma'sul: $ega\n\n📞 Bog'lanish uchun raqam: +$stadion[2]\n$phone_2 \n📍 Stadion joylashgan joy: $viloyat viloyati, $tuman tumani\n📍 Mo'ljal: $stadion[4]\n\n⏱ Soatlik narxi:  $stadion[5]\n\nTahrirlash uchun quyidagi bo'limlardan birini tanlang 👇👇👇 ";
+                    $bot->sendMessage($chat_id, $text,null, false, null, $btn);
+            }
+
+            if (strpos($status, 'locationEdit_')!==false){
+                $stadion_id = explode('_', $status)[1];
+
+                $latitude = $update->getMessage()->getLocation()->getLatitude();
+                $longitude = $update->getMessage()->getLocation()->getLongitude();
+                    $connection->query("update stadions set latitude = '$latitude', longitude = '$longitude' where id = $stadion_id");
+                    $connection->query("update users set status = '0' where chat_id = $chat_id");
+                    $bot->sendMessage($chat_id,"Sizning stadioningiz locatsiyasi muaffaqiyatli o'zgartirildi");
+
+                    $btn = new \TelegramBot\Api\Types\Inline\InlineKeyboardMarkup([
+                        [['text'=>'Nomi 🔤', 'callback_data'=>"name_$stadion_id"],['text'=>'Narxi 💵', 'callback_data'=>"narx_$stadion_id"]],
+                        [['text'=>'Tel raqam 1 📲', 'callback_data'=>"phone1_$stadion_id"],['text'=>'Tel raqam 2 📲', 'callback_data'=>"phone2_$stadion_id"]],
+                        [['text'=>'Mo\'ljal 📍', 'callback_data'=>"manzil_$stadion_id"],['text'=>'Locatsiya 🗺', 'callback_data'=>"location_$stadion_id"]],
+                        [['text'=>"Bosh menyu 🏘", 'callback_data'=>'boshMenu']]
+                    ]);
+
+                    $stadion = $connection->query("select * from stadions where id = '$stadion_id'")->fetch_all()[0];
+                    $ega = $connection->query("select name from users where id = '$stadion[6]'")->fetch_assoc()["name"];
+                    $viloyat = $connection->query("select name from viloyatlars where id = '$stadion[7]'")->fetch_assoc()['name'];
+                    $tuman = $connection->query("select name from tumanlars where id = '$stadion[8]'")->fetch_assoc()['name'];
+
+                    $phone_2 = '';
+                    if ($stadion[3]!== null){
+                        $phone_2 .= "📞 Bog'lanish uchun raqam 2: +$stadion[3]\n";
+                    }
+                    $text = "🏟 Stadion nomi:  $stadion[1]\n👨‍💼 Ma'sul: $ega\n\n📞 Bog'lanish uchun raqam: +$stadion[2]\n$phone_2 \n📍 Stadion joylashgan joy: $viloyat viloyati, $tuman tumani\n📍 Mo'ljal: $stadion[4]\n\n⏱ Soatlik narxi:  $stadion[5]\n\nTahrirlash uchun quyidagi bo'limlardan birini tanlang 👇👇👇 ";
+                    $bot->sendMessage($chat_id, $text,null, false, null, $btn);
+            }
+
+            ///////////  Edit STADION END //////////////////
 
         } catch (Exception $exception) {
         }

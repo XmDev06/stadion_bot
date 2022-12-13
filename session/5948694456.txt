@@ -1,1 +1,1 @@
-name=Santiago Bernabeo;phone=998776665544;phone_2=null;moljal=Sitafordan 100 metr yurganda o'ng qo'lda.;latitude=40.849122;longitude=72.070335;narxi=80000;user_id=2;viloyat=1;tuman=3;
+name=Salomsalom;phone=998991112233;phone_2=null;moljal=lorem ipsum doler sit amet;latitude=40.849122;longitude=72.070335;narxi=40000;user_id=2;viloyat=1;tuman=6;
