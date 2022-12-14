@@ -1,9 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'user/stadion_bot',
-        'pretty_version' => 'dev-main',
-        'version' => 'dev-main',
-        'reference' => 'af998f76ad3cab567823204b54dd75f95c830912',
+        'pretty_version' => 'dev-master',
+        'version' => 'dev-master',
+        'reference' => '9af7822f16fdded600df02bd55a001259a2f8d19',
         'type' => 'library',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -20,9 +20,9 @@
             'dev_requirement' => false,
         ),
         'user/stadion_bot' => array(
-            'pretty_version' => 'dev-main',
-            'version' => 'dev-main',
-            'reference' => 'af998f76ad3cab567823204b54dd75f95c830912',
+            'pretty_version' => 'dev-master',
+            'version' => 'dev-master',
+            'reference' => '9af7822f16fdded600df02bd55a001259a2f8d19',
             'type' => 'library',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),

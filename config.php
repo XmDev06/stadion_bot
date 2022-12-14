@@ -1,6 +1,6 @@
 <?php
 
-$connection = mysqli_connect('localhost','newuser','password','stadion');
+$connection = mysqli_connect('localhost','root','','stadion');
 
 $removeButton = new \TelegramBot\Api\Types\ReplyKeyboardRemove(true);
 $mainbutton = [[['text'=>'']]];
