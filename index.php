@@ -3,7 +3,7 @@ require_once __DIR__ . '/vendor/autoload.php';
 include 'config.php';
 
 $botToken = "5812515378:AAF8J9hvRbx5EULNJZ3I49jNg5slJIgIJT0";
-// https://api.telegram.org/bot5812515378:AAF8J9hvRbx5EULNJZ3I49jNg5slJIgIJT0/setWebhook?url=https://3dfd-188-113-217-30.in.ngrok.io/stadion_bot/index.php
+// https://api.telegram.org/bot5812515378:AAF8J9hvRbx5EULNJZ3I49jNg5slJIgIJT0/setWebhook?url=https://030d-188-113-207-51.in.ngrok.io/stadion_bot/index.php
 
 /**
  * @var $bot \TelegramBot\Api\Client | \TelegramBot\Api\BotApi
@@ -45,18 +45,17 @@ $bot->callbackQuery(static function (\TelegramBot\Api\Types\CallbackQuery $callb
         if (strpos($data, "stadion") !== false) {
             $stadion_id = explode("_", $data)[1];
             $stadion = $connection->query("select * from stadions where id = '$stadion_id'")->fetch_all()[0];
-            var_dump($stadion);
             $ega = $connection->query("select name from users where id = '$stadion[6]'")->fetch_assoc()["name"];
             $viloyat = $connection->query("select name from viloyatlars where id = '$stadion[7]'")->fetch_assoc()['name'];
             $tuman = $connection->query("select name from tumanlars where id = '$stadion[8]'")->fetch_assoc()['name'];
-            var_dump($stadion);
+
             $phone_2 = '';
             if ($stadion[3]!== null){
                 $phone_2 .= "📞 Bog'lanish uchun raqam 2: +$stadion[3]\n";
             }
             $text = "🏟 Stadion nomi:  $stadion[1]\n👨‍💼 Ma'sul: $ega\n\n📞 Bog'lanish uchun raqam: +$stadion[2]\n$phone_2 \n📍 Stadion joylashgan joy: $viloyat viloyati, $tuman tumani\n📍 Mo'ljal: $stadion[4]\n\n⏱ Soatlik narxi:  $stadion[5]\n ";
 
-            $button = new \TelegramBot\Api\Types\Inline\InlineKeyboardMarkup([[['text' => '⏰ Stadion vaqtlari', 'callback_data' => 'std_vaqtlari']], [['text' => '⚙️ Tahrirlash', 'callback_data' => "stdEdit_$stadion_id"], ['text'=>"⛔️ Stadionni o'chirish", 'callback_data'=>"deleteStd_boshMenu_$stadion_id"]],[['text'=>"Bosh menyu 🏘", 'callback_data'=>'boshMenu']]]);
+            $button = new \TelegramBot\Api\Types\Inline\InlineKeyboardMarkup([[['text' => '⏰ Stadion vaqtlari', 'callback_data' => "stdVaqtlari_$stadion_id"]], [['text' => '⚙️ Tahrirlash', 'callback_data' => "stdEdit_$stadion_id"], ['text'=>"⛔️ Stadionni o'chirish", 'callback_data'=>"deleteStd_boshMenu_$stadion_id"]],[['text'=>"Bosh menyu 🏘", 'callback_data'=>'boshMenu']]]);
             $bot->sendMessage($chatId, $text, null, false, false, $button);
             $bot->deleteMessage($chatId, $messageId);
         }
@@ -211,8 +210,8 @@ $bot->callbackQuery(static function (\TelegramBot\Api\Types\CallbackQuery $callb
             $bot->deleteMessage($chatId, $messageId);
         }
 
-        ////////// Stadion EDIT  /////////
 
+        ////////// Stadion EDIT  /////////
         if (strpos($data, 'stdEdit') !== false){
             $stadion_id = explode("_", $data)[1];
             $btn = new \TelegramBot\Api\Types\Inline\InlineKeyboardMarkup([
@@ -275,6 +274,18 @@ $bot->callbackQuery(static function (\TelegramBot\Api\Types\CallbackQuery $callb
             $nameEdit = "locationEdit_$id";
             $connection->query("update users set status = '$nameEdit' where chat_id='$chatId'");
         }
+        ////////// Stadion EDIT end  /////////
+
+        ///////////   STADION vaqtlari  START //////////////////
+
+        if(substr($data, 'stdVaqtlari_')!==false){
+
+        }
+
+
+
+        ///////////   STADION vaqtlari  END //////////////////
+
 
     } catch (Exception $exception) {
     }
@@ -602,6 +613,16 @@ $bot->on(static function () {
             }
 
             ///////////  Edit STADION END //////////////////
+
+            ///////////   STADION vaqtlari  START //////////////////
+
+
+
+
+
+            ///////////   STADION vaqtlari  END //////////////////
+
+
 
         } catch (Exception $exception) {
         }
