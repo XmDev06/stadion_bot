@@ -1,5 +1,6 @@
 <?php
-require_once  __DIR__ . '/vendor/autoload.php';
+require_once __DIR__ . '/vendor/autoload.php';
+include "config.php";
 
 $botToken = "5812515378:AAF8J9hvRbx5EULNJZ3I49jNg5slJIgIJT0";
 // https://api.telegram.org/bot5812515378:AAF8J9hvRbx5EULNJZ3I49jNg5slJIgIJT0/setWebhook?url=https://7c15-213-230-80-250.eu.ngrok.io/projects/stadion_bot/user.php
@@ -7,7 +8,7 @@ $botToken = "5812515378:AAF8J9hvRbx5EULNJZ3I49jNg5slJIgIJT0";
 $bot = new \TelegramBot\Api\Client($botToken);
 
 
-$bot->command('start', static function (\TelegramBot\Api\Types\Message $message) use ($bot) {
+$bot->command('start', static function (\TelegramBot\Api\Types\Message $message) use ($bot, $connection) {
     try {
         $chatId = $message->getChat()->getId();
         $firstname = $message->getChat()->getFirstName();
@@ -20,7 +21,7 @@ $bot->command('start', static function (\TelegramBot\Api\Types\Message $message)
 });
 
 
-$bot->callbackQuery(static function (\TelegramBot\Api\Types\CallbackQuery $callbackquery) use ($bot) {
+$bot->callbackQuery(static function (\TelegramBot\Api\Types\CallbackQuery $callbackquery) use ($bot, $connection) {
     try {
 
         $chatId = $callbackquery->getMessage()->getChat()->getId();
@@ -39,7 +40,7 @@ $bot->callbackQuery(static function (\TelegramBot\Api\Types\CallbackQuery $callb
 
 $bot->on(static function () {
 },
-    static function (\TelegramBot\Api\Types\Update $update) use ($bot) {
+    static function (\TelegramBot\Api\Types\Update $update) use ($bot, $connection) {
 
         try {
             $chat_id = $update->getMessage()->getChat()->getId();
