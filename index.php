@@ -3,7 +3,7 @@ require_once __DIR__ . '/vendor/autoload.php';
 include 'config.php';
 
 $botToken = "5812515378:AAF8J9hvRbx5EULNJZ3I49jNg5slJIgIJT0";
-// https://api.telegram.org/bot5812515378:AAF8J9hvRbx5EULNJZ3I49jNg5slJIgIJT0/setWebhook?url=https://df03-188-113-216-4.in.ngrok.io/stadion_bot/index.php
+// https://api.telegram.org/bot5812515378:AAF8J9hvRbx5EULNJZ3I49jNg5slJIgIJT0/setWebhook?url=https://31b3-213-230-102-85.eu.ngrok.io/projects/stadion_bot/index.php
 
 /**
  * @var $bot \TelegramBot\Api\Client | \TelegramBot\Api\BotApi
@@ -41,7 +41,6 @@ $bot->callbackQuery(static function (\TelegramBot\Api\Types\CallbackQuery $callb
             $bot->sendMessage($chatId, "Yangi stadion yaratish uchun Stadion nomini kiriting: ");
             $connection->query("update users set status = 'create_stadion' where chat_id='$chatId'");
         }
-
         if (strpos($data, "stadion") !== false) {
             $stadion_id = explode("_", $data)[1];
             $stadion = $connection->query("select * from stadions where id = '$stadion_id'")->fetch_all()[0];
@@ -59,7 +58,6 @@ $bot->callbackQuery(static function (\TelegramBot\Api\Types\CallbackQuery $callb
             $bot->sendMessage($chatId, $text, null, false, false, $button);
             $bot->deleteMessage($chatId, $messageId);
         }
-
         if ($data == "phone_number_2") {
             $bot->sendMessage($chatId, "Tahminiy mo'ljal kiriting 📍");
             $connection->query("update users set status = 'moljal' where chat_id='$chatId'");
@@ -68,7 +66,6 @@ $bot->callbackQuery(static function (\TelegramBot\Api\Types\CallbackQuery $callb
             fclose($myfile);
             $bot->deleteMessage($chatId, $messageId);
         }
-
         if (strpos($data, "viloyat_") !== false) {
             $viloyat_id = explode("_", $data)[1];
             $tumanlar = $connection->query("select * from tumanlars where viloyat_id = $viloyat_id")->fetch_all();
@@ -88,7 +85,6 @@ $bot->callbackQuery(static function (\TelegramBot\Api\Types\CallbackQuery $callb
             fclose($myfile);
             $bot->deleteMessage($chatId, $messageId);
         }
-
         if (strpos($data, "tuman_") !== false) {
             $tuman_id = explode("_", $data)[1];
 
@@ -142,7 +138,6 @@ $bot->callbackQuery(static function (\TelegramBot\Api\Types\CallbackQuery $callb
 
             $bot->deleteMessage($chatId, $messageId);
         }
-
         if ($data == 'tasdiqlash') {
             $data = file_get_contents("session/$chatId.txt");
             $data_massiv = explode(';', $data);
@@ -183,7 +178,6 @@ $bot->callbackQuery(static function (\TelegramBot\Api\Types\CallbackQuery $callb
                 $bot->sendMessage($chatId, "Bog'lanishdagi xatolik");
             }
         }
-
         if (strpos($data, 'deleteStd_') !== false) {
             $stadion_id = explode('_', $data)[2];
             $delete_test = $connection->query("delete from stadions where id = '$stadion_id'");
@@ -194,7 +188,6 @@ $bot->callbackQuery(static function (\TelegramBot\Api\Types\CallbackQuery $callb
                 $bot->sendMessage($chatId, "Stadionni o'chirib bo'lmadi dasturchi bilan bog'laning ✅");
             }
         }
-
         if (strpos($data, 'boshMenu') !== false) {
             $stadions = $connection->query("select * from stadions where user_id = '$userId'")->fetch_all();
 
@@ -299,7 +292,7 @@ $bot->callbackQuery(static function (\TelegramBot\Api\Types\CallbackQuery $callb
             $vaqtlar = $connection->query("select * from vaqtlar where stadion_id = '$stadion_id' and kun = '$kun' order by vaqt")->fetch_all();
             date_default_timezone_set("Asia/Tashkent");
             $gtime = date("H.i");
-            $buttonEdit = new \TelegramBot\Api\Types\Inline\InlineKeyboardMarkup([[['text' => "Vaqt band qilish 🖇", 'callback_data' => "buyTime_$stadion_id"."_$kun"]], [['text' => "Orqaga 🔙", 'callback_data' => "stdVaqtlari_$stadion_id"]]]);
+            $buttonEdit = new \TelegramBot\Api\Types\Inline\InlineKeyboardMarkup([[['text' => "Vaqt band qilish 🖇", 'callback_data' => "buyTime_$stadion_id" . "_$kun"]], [['text' => "Orqaga 🔙", 'callback_data' => "stdVaqtlari_$stadion_id"]]]);
 
             if (count($vaqtlar) != 0) {
                 foreach ($vaqtlar as $key => $vaqt) {
@@ -317,8 +310,8 @@ $bot->callbackQuery(static function (\TelegramBot\Api\Types\CallbackQuery $callb
                             } else {
                                 $bot->sendMessage($chatId, $text);
                             }
-                        }else{
-                            $bot->sendMessage($chatId, "Band qilingan vaqtlar yo'q", null,false, null, $buttonEdit);
+                        } else {
+                            $bot->sendMessage($chatId, "Band qilingan vaqtlar yo'q", null, false, null, $buttonEdit);
                         }
                     } else {
                         if (($key + 1) == count($vaqtlar)) {
@@ -333,10 +326,10 @@ $bot->callbackQuery(static function (\TelegramBot\Api\Types\CallbackQuery $callb
             }
             $bot->deleteMessage($chatId, $messageId);
         }
-        if (strpos($data, "buyTime_")!==false) {
+        if (strpos($data, "buyTime_") !== false) {
             $stadion_id = explode("_", $data)[1];
             $kun = explode("_", $data)[2];
-            $consumer = "consumerPhone_$stadion_id"."_$kun";
+            $consumer = "consumerPhone_$stadion_id" . "_$kun";
             $connection->query("update users set status = '$consumer' where chat_id='$chatId'");
             $bot->sendMessage($chatId, "Vaqt band qilish uchun buyurtmachining telefon raqamini kiriting (Na'muna: 998993337744):");
         }
@@ -344,7 +337,7 @@ $bot->callbackQuery(static function (\TelegramBot\Api\Types\CallbackQuery $callb
 
 
         ////////// Qayta zakaz qilish /////////////
-        if (strpos($data, 'qaytaZakaz_')!==false){
+        if (strpos($data, 'qaytaZakaz_') !== false) {
             $phone = explode('_', $data)[1];
             $kun = explode('_', $data)[2];
             $stadion_id = explode('_', $data)[3];
@@ -353,43 +346,77 @@ $bot->callbackQuery(static function (\TelegramBot\Api\Types\CallbackQuery $callb
             $vaqtMassiv = [];
             foreach ($vaqtlar_massiv as $key => $item) {
                 $vaqtNow = $connection->query("select vaqt from vaqtlar where kun = '$kun' and vaqt = '$item'")->num_rows;
-                if ($vaqtNow == 0){
-                    $vaqtMassiv[]= ['text'=>"$item", "callback_data"=>"NewVaqt"."_$kun"."_$stadion_id"."_$oldbuyurtmachiId"."_$item"];
+                if ($vaqtNow == 0) {
+                    $vaqtMassiv[] = ['text' => "$item", "callback_data" => "NewVaqt" . "_$kun" . "_$stadion_id" . "_$oldbuyurtmachiId" . "_$item"];
                 }
             }
             $btn = new \TelegramBot\Api\Types\Inline\InlineKeyboardMarkup(array_chunk($vaqtMassiv, '4'));
-            $bot->sendMessage($chatId, 'Qaysi vaqtni buyurtma qildi ?', false, null, false,$btn);
+            $bot->sendMessage($chatId, 'Qaysi vaqtni buyurtma qildi ?', false, null, false, $btn);
+            $bot->deleteMessage($chatId,$messageId);
         }
-
-        if (strpos($data, 'NewVaqt_')!==false){
+        if (strpos($data, 'NewVaqt_') !== false) {
             $kun = explode('_', $data)[1];
             $stadion_id = explode('_', $data)[2];
             $oldbuyurtmachiId = explode('_', $data)[3];;
             $vaqt = explode('_', $data)[4];
-//            $connection->query("insert into vaqtlar (stadion_id, consumer, vaqt, kun) values ('$stadion_id', '$oldbuyurtmachiId', '$vaqt', '$kun')");
             $myfile = fopen("vaqt/$chatId.txt", "a") or die("Unable to open file!");
-            fwrite($myfile, "insert into vaqtlar (stadion_id, consumer, vaqt, kun) values ('$stadion_id', '$oldbuyurtmachiId', '$vaqt', '$kun')###");
-            fclose($myfile);
+
             $vaqtMassiv = [];
+            $vaqtlar_text = [];
+            $text_file_massiv = explode("###", file_get_contents("vaqt/$chatId.txt"));
+            foreach ($text_file_massiv as $value) {
+                $vaqtlar_text[] = explode(",", $value)[2];
+            }
+
+
+            if (!in_array($vaqt, $vaqtlar_text)) {
+                fwrite($myfile, "$stadion_id,$oldbuyurtmachiId,$vaqt,$kun###");
+                fclose($myfile);
+            }
+
             foreach ($vaqtlar_massiv as $key => $item) {
                 $vaqtNow = $connection->query("select vaqt from vaqtlar where kun = '$kun' and vaqt = '$item'")->num_rows;
-                if ($vaqtNow == 0){
-                    if ($vaqt == $item){
-                        $vaqtMassiv[]= ['text'=>"$item ✅", "callback_data"=>"NewVaqt"."_$kun"."_$stadion_id"."_$oldbuyurtmachiId"."_$item"];
-                    }else{
-                        $vaqtMassiv[]= ['text'=>"$item", "callback_data"=>"NewVaqt"."_$kun"."_$stadion_id"."_$oldbuyurtmachiId"."_$item"];
+                if ($vaqtNow == 0) {
+                    if (in_array($item, $vaqtlar_text) || $vaqt == $item) {
+                        $vaqtMassiv[] = ['text' => "$item ✅", "callback_data" => "NewVaqt" . "_$kun" . "_$stadion_id" . "_$oldbuyurtmachiId" . "_$item"];
+                    } else {
+                        $vaqtMassiv[] = ['text' => "$item", "callback_data" => "NewVaqt" . "_$kun" . "_$stadion_id" . "_$oldbuyurtmachiId" . "_$item"];
                     }
                 }
             }
             $vaqt_chunk = array_chunk($vaqtMassiv, '4');
-            $vaqt_chunk[]= [['text'=>"Tasdiqlash", "callback_data"=>"tasdiqlash"."_$kun"."_$stadion_id"."_$oldbuyurtmachiId"."_$item"]];
+            $vaqt_chunk[] = [['text' => "Tasdiqlash ✅", "callback_data" => "vaqtConfirm"], ['text' => "Bekor qilish ❌", "callback_data" => "vaqtCancle"]];
             $btn = new \TelegramBot\Api\Types\Inline\InlineKeyboardMarkup($vaqt_chunk);
 
-            $bot->sendMessage($chatId, "Tasdiqlandi. Yana qaysi vaqtlarni tanladi", false, null, false, $btn);
+            $bot->sendMessage($chatId, "Agar boshqa buyurtmangiz bo'lmasa tasdiqlash tugmasini bosing. Agar bo'lsa yana vaqt tanlang", false, null, false, $btn);
             $bot->deleteMessage($chatId, $messageId);
         }
-
-
+        if ($data == "vaqtConfirm") {
+            $file_arr = explode("###", file_get_contents("vaqt/$chatId.txt"));
+            $stadion_id = explode(",", file_get_contents("vaqt/$chatId.txt"))[0];
+            array_pop($file_arr);
+            foreach ($file_arr as $value) {
+                $valuArr = explode(",", $value);
+                $stadion_id = $valuArr[0];
+                $oldbuyurtmachiId = $valuArr[1];
+                $vaqt = $valuArr[2];
+                $kun = $valuArr[3];
+                $vaqtNow = $connection->query("select vaqt from vaqtlar where kun = '$kun' and vaqt = '$vaqt'")->num_rows;
+                if ($vaqtNow == 0) {
+                    var_dump("insert into vaqtlar (stadion_id, consumer, vaqt, kun) values ('$stadion_id', '$oldbuyurtmachiId', '$vaqt', '$kun')");
+                    $test = $connection->query("insert into vaqtlar (stadion_id, consumer, vaqt, kun) values ('$stadion_id', '$oldbuyurtmachiId', '$vaqt', '$kun')");
+                }
+            }
+            $btn = new \TelegramBot\Api\Types\Inline\InlineKeyboardMarkup([[['text' => "Orqaga 🔙", "callback_data" => "stdVaqtlari_$stadion_id"], ['text' => "Bosh Menu 🏘", "callback_data" => "boshMenu"]]]);
+            $bot->sendMessage($chatId, "Siz tanlagan vaqtlar band qilindi", null, false, null, $btn);
+            unlink("vaqt/$chatId.txt");
+            $bot->deleteMessage($chatId, $messageId);
+        }
+        if ($data == "vaqtCancle") {
+            unlink("vaqt/$chatId.txt");
+            $bot->sendMessage($chatId,"Tanlangan vaqtlar bekor qilindi!",null,false,null,new \TelegramBot\Api\Types\Inline\InlineKeyboardMarkup([[['text' => "Bosh Menu 🏘", "callback_data" => "boshMenu"]]]));
+            $bot->deleteMessage($chatId,$messageId);
+        }
 
     } catch (Exception $exception) {
     }
@@ -398,7 +425,7 @@ $bot->callbackQuery(static function (\TelegramBot\Api\Types\CallbackQuery $callb
 
 $bot->on(static function () {
 },
-    static function (\TelegramBot\Api\Types\Update $update) use ($connection, $bot) {
+    static function (\TelegramBot\Api\Types\Update $update) use ($vaqtlar_massiv, $connection, $bot) {
 
         try {
             $chat_id = $update->getMessage()->getChat()->getId();
@@ -465,7 +492,6 @@ $bot->on(static function () {
                     $bot->sendMessage($chat_id, "❗Stadion nomida faqat harflar qatnashgan so'zlardan foydalaning");
                 }
             }
-
             if ($status == 'phone_number' && $text) {
                 $filter_number = preg_match("/^[0-9]{12,12}/", $text);
                 if ($filter_number === 1) {
@@ -480,7 +506,6 @@ $bot->on(static function () {
                     $bot->sendMessage($chat_id, "❗️ Iltimos, telefon raqamni namunadagidek kiriting");
                 }
             }
-
             if ($status == 'phone_number_2' && $text) {
                 $filter_number = preg_match("/^[0-9]{12,12}/", $text);
                 if ($filter_number === 1) {
@@ -493,7 +518,6 @@ $bot->on(static function () {
                     $bot->sendMessage($chat_id, "❗️ Iltimos, telefon raqamni namunadagidek kiriting");
                 }
             }
-
             if ($status == 'moljal') {
                 $myfile = fopen("session/$chat_id.txt", "a");
                 fwrite($myfile, "moljal=" . $text . ";");
@@ -501,7 +525,6 @@ $bot->on(static function () {
                 $bot->sendMessage($chat_id, "Stadion lacatsiyasini tashlang 📍");
                 $connection->query("update users set status = 'location' where chat_id='$chat_id'");
             }
-
             if ($status == 'location') {
                 $latitude = $update->getMessage()->getLocation()->getLatitude();
                 $longitude = $update->getMessage()->getLocation()->getLongitude();
@@ -513,7 +536,6 @@ $bot->on(static function () {
                 $bot->sendMessage($chat_id, "Stadion narxini so'mda kiriting 💰 (Na'muna: 50000)");
                 $connection->query("update users set status = 'narx' where chat_id='$chat_id'");
             }
-
             if ($status == "narx") {
                 $filter_narx = preg_match("/^[0-9]/", $text);
                 if ($filter_narx === 1) {
@@ -713,57 +735,79 @@ $bot->on(static function () {
             ///////////  Edit STADION END //////////////////
 
             ///////////   STADION vaqtlari write  START //////////////////
-
             if (strpos($status, "consumerPhone_") !== false) {
                 $stadion_id = explode("_", $status)[1];
                 $kun = explode("_", $status)[2];
 
-                $filter = preg_match("/^[0-9]/", $text);
+                $filter = preg_match("/^[0-9]{12,12}/", $text);
                 if ($filter === 1) {
                     $phone_unique = $connection->query("select phone from consumer where phone = '$text'")->num_rows;
 
-                    if ($phone_unique == 0){
-                        $consumer = "consumerName_$stadion_id"."_$text";
+                    if ($phone_unique == 0) {
+                        $consumer = "consumerName_$text" . "_$stadion_id" . "_$kun";
                         $test = $connection->query("insert into consumer (chat_id, phone) values ('$chat_id','$text')");
-                        if($test) {
-                            $connection->query('update users set status = "$consumer" where chat_id="$chatId"');
+                        if ($test) {
+                            $sql = "update users set status = '$consumer' where chat_id='$chat_id'";
+                            $tt = $connection->query("update users set status = '$consumer' where chat_id='$chat_id'");
                             $bot->sendMessage($chat_id, "Buyurtmachining ismini kiriting:");
                         }
-                    }else{
+                    } else {
                         $phone_number = $connection->query("select phone from consumer where phone = '$text'")->fetch_assoc()['phone'];
                         $oldbuyurtmachiName = $connection->query("select * from consumer where phone = '$phone_number'")->fetch_assoc()['name'];
                         $oldbuyurtmachiManzil = $connection->query("select * from consumer where phone = '$phone_number'")->fetch_assoc()['manzil'];
 
-                        $text = "Ushbu raqam egasi oldin stadion buyurtma qilgan👇👇👇\n\nIsmi: $oldbuyurtmachiName\nTelefon raqami: $phone_number\nManzili: $oldbuyurtmachiManzil\n\nQayta zakaz qilgan bo'lsa quyidagi tugmachani bosish orqali yangi vaqt tasdiqlang👇👇👇";
-                        $btn = new \TelegramBot\Api\Types\Inline\InlineKeyboardMarkup([[['text'=>'Qayta zakaz qilish 🔂', 'callback_data'=>"qaytaZakaz_$phone_number"."_$kun"."_$stadion_id"]]]);
-                        $bot->sendMessage($chat_id, $text,'HTML',false,null,$btn);
+                        if ($oldbuyurtmachiManzil !== null) {
+                            $text = "Ushbu raqam egasi oldin stadion buyurtma qilgan👇👇👇\n\nIsmi: $oldbuyurtmachiName\nTelefon raqami: $phone_number\nManzili: $oldbuyurtmachiManzil";
+                            $btn = new \TelegramBot\Api\Types\Inline\InlineKeyboardMarkup([[['text' => 'Shu buyurtmachini tanlash 🔂', 'callback_data' => "qaytaZakaz_$phone_number" . "_$kun" . "_$stadion_id"]]]);
+                            $bot->sendMessage($chat_id, $text, 'HTML', false, null, $btn);
+                        }
                     }
 
-                }else {
+                } else {
                     $bot->sendMessage($chat_id, "❗Iltimos telefon raqamni namunadagidek kiriting!");
                 }
 
             }
-
             if (strpos($status, "consumerName_") !== false) {
-                $stadion_id = explode("_", $status)[1];
-                $phone_number = explode("_", $status)[2];
+                $phone_number = explode("_", $status)[1];
+                $stadion_id = explode("_", $status)[2];
+                $kun = explode("_", $status)[3];
                 $filter = preg_match("/^[a-zA-Z '`‘]*$/", $text);
                 if ($filter === 1) {
-                    $consumer = "consumerName_$stadion_id";
+                    $consumer = "consumerManzil_$phone_number" . "_$stadion_id" . "_$kun";
                     $rep_text = str_replace("'", "\'", $text);
-                    $connection->query('update consumer set phone = "$rep_text" where phone="$phone_number"');
-                    $connection->query('update users set status = "$consumer" where chat_id="$chatId"');
+                    $connection->query("update consumer set name = '$rep_text' where phone='$phone_number'");
+                    $connection->query("update users set status = '$consumer' where chat_id='$chat_id'");
                     $bot->sendMessage($chat_id, "Buyurtmachining manzilini kiriting");
-                }else {
+                } else {
                     $bot->sendMessage($chat_id, "❗Buyurtmachining manzilini to'g'ri kiriting");
                 }
 
             }
+            if (strpos($status, "consumerManzil_") !== false) {
+                $phone_number = explode("_", $status)[1];
+                $stadion_id = explode("_", $status)[2];
+                $kun = explode("_", $status)[3];
 
+                $rep_text = str_replace("'", "\'", $text);
+                $connection->query("update consumer set manzil = '$rep_text' where phone='$phone_number'");
+                $connection->query("update users set status = '0' where chat_id='$chat_id'");
 
+                $oldbuyurtmachiId = $connection->query("select * from consumer where phone = '$phone_number'")->fetch_assoc()['id'];
 
-
+                $vaqtMassiv = [];
+                foreach ($vaqtlar_massiv as $key => $item) {
+                    var_dump($item);
+                    $vaqtNow = $connection->query("select vaqt from vaqtlar where kun = '$kun' and vaqt = '$item'")->num_rows;
+                    var_dump($vaqtNow);
+                    if ($vaqtNow == 0) {
+                        $vaqtMassiv[] = ['text' => "$item", "callback_data" => "NewVaqt" . "_$kun" . "_$stadion_id" . "_$oldbuyurtmachiId" . "_$item"];
+                    }
+                }
+                var_dump($vaqtMassiv);
+                $btn = new \TelegramBot\Api\Types\Inline\InlineKeyboardMarkup(array_chunk($vaqtMassiv, '4'));
+                $bot->sendMessage($chat_id, 'Qaysi vaqtni buyurtma qildi ?', false, null, false, $btn);
+            }
             ///////////   STADION vaqtlari write END //////////////////
 
 
