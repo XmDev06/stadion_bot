@@ -3,7 +3,7 @@ require_once __DIR__ . '/vendor/autoload.php';
 include 'config.php';
 
 $botToken = "5812515378:AAF8J9hvRbx5EULNJZ3I49jNg5slJIgIJT0";
-// https://api.telegram.org/bot5812515378:AAF8J9hvRbx5EULNJZ3I49jNg5slJIgIJT0/setWebhook?url=https://8617-188-113-228-174.in.ngrok.io/stadion_bot/index.php
+// https://api.telegram.org/bot5812515378:AAF8J9hvRbx5EULNJZ3I49jNg5slJIgIJT0/setWebhook?url=https://df03-188-113-216-4.in.ngrok.io/stadion_bot/index.php
 
 /**
  * @var $bot \TelegramBot\Api\Client | \TelegramBot\Api\BotApi
@@ -29,7 +29,7 @@ $bot->command('start', static function (\TelegramBot\Api\Types\Message $message)
 });
 
 
-$bot->callbackQuery(static function (\TelegramBot\Api\Types\CallbackQuery $callbackquery) use ($connection, $bot) {
+$bot->callbackQuery(static function (\TelegramBot\Api\Types\CallbackQuery $callbackquery) use ($vaqtlar_massiv, $connection, $bot) {
     try {
 
         $chatId = $callbackquery->getMessage()->getChat()->getId();
@@ -317,6 +317,8 @@ $bot->callbackQuery(static function (\TelegramBot\Api\Types\CallbackQuery $callb
                             } else {
                                 $bot->sendMessage($chatId, $text);
                             }
+                        }else{
+                            $bot->sendMessage($chatId, "Band qilingan vaqtlar yo'q", null,false, null, $buttonEdit);
                         }
                     } else {
                         if (($key + 1) == count($vaqtlar)) {
@@ -348,62 +350,43 @@ $bot->callbackQuery(static function (\TelegramBot\Api\Types\CallbackQuery $callb
             $stadion_id = explode('_', $data)[3];
             $oldbuyurtmachiId = $connection->query("select * from consumer where phone = '$phone'")->fetch_assoc()['id'];
 
-            $vaqtlar_btn = new \TelegramBot\Api\Types\Inline\InlineKeyboardMarkup([
-                [['text'=>'13:00','callback_data'=>"13:00"."_$kun"."_$stadion_id"."_$phone"],['text'=>'13:30','callback_data'=>"13:30"."_$kun"."_$stadion_id"."_$phone"],['text'=>'14:00','callback_data'=>"14:00"."_$kun"."_$stadion_id"."_$phone"],['text'=>'14:30','callback_data'=>'14:30'."_$kun"."_$stadion_id"."_$phone"]],
-                [['text'=>'15:00','callback_data'=>"15:00"."_$kun"."_$stadion_id"."_$phone"],['text'=>'15:30','callback_data'=>"15:30"."_$kun"."_$stadion_id"."_$phone"],['text'=>'16:00','callback_data'=>"16:00"."_$kun"."_$stadion_id"."_$phone"],['text'=>'16:30','callback_data'=>'16:30'."_$kun"."_$stadion_id"."_$phone"]],
-                [['text'=>'17:00','callback_data'=>"17:00"."_$kun"."_$stadion_id"."_$phone"],['text'=>'17:30','callback_data'=>"17:30"."_$kun"."_$stadion_id"."_$phone"],['text'=>'18:00','callback_data'=>"18:00"."_$kun"."_$stadion_id"."_$phone"],['text'=>'18:30','callback_data'=>'18:30'."_$kun"."_$stadion_id"."_$phone"]],
-                [['text'=>'19:00','callback_data'=>"19:00"."_$kun"."_$stadion_id"."_$phone"],['text'=>'19:30','callback_data'=>"19:30"."_$kun"."_$stadion_id"."_$phone"],['text'=>'20:00','callback_data'=>"20:00"."_$kun"."_$stadion_id"."_$phone"],['text'=>'20:30','callback_data'=>'20:30'."_$kun"."_$stadion_id"."_$phone"]],
-                [['text'=>'21:00','callback_data'=>"21:00"."_$kun"."_$stadion_id"."_$phone"],['text'=>'21:30','callback_data'=>"21:30"."_$kun"."_$stadion_id"."_$phone"],['text'=>'22:00','callback_data'=>"22:00"."_$kun"."_$stadion_id"."_$phone"],['text'=>'22:30','callback_data'=>'22:30'."_$kun"."_$stadion_id"."_$phone"]],
-                [['text'=>'23:00','callback_data'=>"23:00"."_$kun"."_$stadion_id"."_$phone"],['text'=>'23:30','callback_data'=>"23:30"."_$kun"."_$stadion_id"."_$phone"],['text'=>'00:00','callback_data'=>"00:00"."_$kun"."_$stadion_id"."_$phone"],['text'=>'00:30','callback_data'=>'00:30'."_$kun"."_$stadion_id"."_$phone"]],
-                [['text'=>'1:00','callback_data'=>"1:00"."_$kun"."_$stadion_id"."_$phone"],['text'=>'1:30','callback_data'=>'1:30'."_$kun"."_$stadion_id"."_$phone"]]
-            ]);
-
-            $connection->query("insert into vaqtlar (stadion_id, consumer, kun) values ('$stadion_id', '$oldbuyurtmachiId', '$kun')");
-
-            $bot->sendMessage($chatId, 'Qaysi vaqtni buyurtma qildi ?', false, null, false,$vaqtlar_btn);
-
+            $vaqtMassiv = [];
+            foreach ($vaqtlar_massiv as $key => $item) {
+                $vaqtNow = $connection->query("select vaqt from vaqtlar where kun = '$kun' and vaqt = '$item'")->num_rows;
+                if ($vaqtNow == 0){
+                    $vaqtMassiv[]= ['text'=>"$item", "callback_data"=>"NewVaqt"."_$kun"."_$stadion_id"."_$oldbuyurtmachiId"."_$item"];
+                }
+            }
+            $btn = new \TelegramBot\Api\Types\Inline\InlineKeyboardMarkup(array_chunk($vaqtMassiv, '4'));
+            $bot->sendMessage($chatId, 'Qaysi vaqtni buyurtma qildi ?', false, null, false,$btn);
         }
 
-        if (strpos($data, 'newVaqt_')!==false){
-            $vaqt = explode('_', $data)[1];
-            $kun = explode('_', $data)[2];
-            $stadion_id = explode('_', $data)[3];
-            $phone = explode('_', $data)[4];
-            $oldbuyurtmachiId = $connection->query("select * from consumer where phone = '$phone'")->fetch_assoc()['id'];
-            $connection->query("insert into vaqtlar (stadion_id, consumer, vaqt, kun) values ('$stadion_id', '$oldbuyurtmachiId', '$vaqt', '$kun')");
-            $vaqtlar_btn = new \TelegramBot\Api\Types\Inline\InlineKeyboardMarkup([
-                [['text'=>'13:00','callback_data'=>"newVaqt_13:00"."_$kun"."_$stadion_id"],['text'=>'13:30','callback_data'=>"newVaqt_13:30"."_$kun"."_$stadion_id"],['text'=>'14:00','callback_data'=>"newVaqt_14:00"."_$kun"."_$stadion_id"],['text'=>'14:30','callback_data'=>'14:30'."_$kun"."_$stadion_id"]],
-                [['text'=>'15:00','callback_data'=>"newVaqt_15:00"."_$kun"."_$stadion_id"],['text'=>'15:30','callback_data'=>"newVaqt_15:30"."_$kun"."_$stadion_id"],['text'=>'16:00','callback_data'=>"newVaqt_16:00"."_$kun"."_$stadion_id"],['text'=>'16:30','callback_data'=>'16:30'."_$kun"."_$stadion_id"]],
-                [['text'=>'17:00','callback_data'=>"newVaqt_17:00"."_$kun"."_$stadion_id"],['text'=>'17:30','callback_data'=>"newVaqt_17:30"."_$kun"."_$stadion_id"],['text'=>'18:00','callback_data'=>"newVaqt_18:00"."_$kun"."_$stadion_id"],['text'=>'18:30','callback_data'=>'18:30'."_$kun"."_$stadion_id"]],
-                [['text'=>'19:00','callback_data'=>"newVaqt_19:00"."_$kun"."_$stadion_id"],['text'=>'19:30','callback_data'=>"newVaqt_19:30"."_$kun"."_$stadion_id"],['text'=>'20:00','callback_data'=>"newVaqt_20:00"."_$kun"."_$stadion_id"],['text'=>'20:30','callback_data'=>'20:30'."_$kun"."_$stadion_id"]],
-                [['text'=>'21:00','callback_data'=>"newVaqt_21:00"."_$kun"."_$stadion_id"],['text'=>'21:30','callback_data'=>"newVaqt_21:30"."_$kun"."_$stadion_id"],['text'=>'22:00','callback_data'=>"newVaqt_22:00"."_$kun"."_$stadion_id"],['text'=>'22:30','callback_data'=>'22:30'."_$kun"."_$stadion_id"]],
-                [['text'=>'23:00','callback_data'=>"newVaqt_23:00"."_$kun"."_$stadion_id"],['text'=>'23:30','callback_data'=>"newVaqt_23:30"."_$kun"."_$stadion_id"],['text'=>'00:00','callback_data'=>"newVaqt_00:00"."_$kun"."_$stadion_id"],['text'=>'00:30','callback_data'=>'00:30'."_$kun"."_$stadion_id"]],
-                [['text'=>'1:00','callback_data'=>"newVaqt_1:00"."_$kun"."_$stadion_id"],['text'=>'1:30','callback_data'=>'newVaqt_1:30'."_$kun"."_$stadion_id"]],
-                [['text'=>'Tasdiqlash','callback_data'=>"tasdiqlash"]]
-            ]);
-            $bot->sendMessage($chatId, "Tasdiqlandi. Yana qaysi vaqtlarni tanladi", false, null, false, $vaqtlar_btn);
-            $bot->deleteMessage($chatId, $messageId);
-        }
-
-        if (strpos($data, ':00')!==false || strpos($data, ':30')!==false){
-            $vaqt = explode('_', $data)[0];
+        if (strpos($data, 'NewVaqt_')!==false){
             $kun = explode('_', $data)[1];
             $stadion_id = explode('_', $data)[2];
-            $test = $connection->query("update vaqtlar set vaqt = '$vaqt' where kun = '$kun' ");
-            if ($test){
-                $vaqtlar_btn = new \TelegramBot\Api\Types\Inline\InlineKeyboardMarkup([
-                    [['text'=>'13:00','callback_data'=>"newVaqt_13:00"."_$kun"."_$stadion_id"],['text'=>'13:30','callback_data'=>"newVaqt_13:30"."_$kun"."_$stadion_id"],['text'=>'14:00','callback_data'=>"newVaqt_14:00"."_$kun"."_$stadion_id"],['text'=>'14:30','callback_data'=>'14:30'."_$kun"."_$stadion_id"]],
-                    [['text'=>'15:00','callback_data'=>"newVaqt_15:00"."_$kun"."_$stadion_id"],['text'=>'15:30','callback_data'=>"newVaqt_15:30"."_$kun"."_$stadion_id"],['text'=>'16:00','callback_data'=>"newVaqt_16:00"."_$kun"."_$stadion_id"],['text'=>'16:30','callback_data'=>'16:30'."_$kun"."_$stadion_id"]],
-                    [['text'=>'17:00','callback_data'=>"newVaqt_17:00"."_$kun"."_$stadion_id"],['text'=>'17:30','callback_data'=>"newVaqt_17:30"."_$kun"."_$stadion_id"],['text'=>'18:00','callback_data'=>"newVaqt_18:00"."_$kun"."_$stadion_id"],['text'=>'18:30','callback_data'=>'18:30'."_$kun"."_$stadion_id"]],
-                    [['text'=>'19:00','callback_data'=>"newVaqt_19:00"."_$kun"."_$stadion_id"],['text'=>'19:30','callback_data'=>"newVaqt_19:30"."_$kun"."_$stadion_id"],['text'=>'20:00','callback_data'=>"newVaqt_20:00"."_$kun"."_$stadion_id"],['text'=>'20:30','callback_data'=>'20:30'."_$kun"."_$stadion_id"]],
-                    [['text'=>'21:00','callback_data'=>"newVaqt_21:00"."_$kun"."_$stadion_id"],['text'=>'21:30','callback_data'=>"newVaqt_21:30"."_$kun"."_$stadion_id"],['text'=>'22:00','callback_data'=>"newVaqt_22:00"."_$kun"."_$stadion_id"],['text'=>'22:30','callback_data'=>'22:30'."_$kun"."_$stadion_id"]],
-                    [['text'=>'23:00','callback_data'=>"newVaqt_23:00"."_$kun"."_$stadion_id"],['text'=>'23:30','callback_data'=>"newVaqt_23:30"."_$kun"."_$stadion_id"],['text'=>'00:00','callback_data'=>"newVaqt_00:00"."_$kun"."_$stadion_id"],['text'=>'00:30','callback_data'=>'00:30'."_$kun"."_$stadion_id"]],
-                    [['text'=>'1:00','callback_data'=>"newVaqt_1:00"."_$kun"."_$stadion_id"],['text'=>'1:30','callback_data'=>'newVaqt_1:30'."_$kun"."_$stadion_id"]],
-                    [['text'=>'Tasdiqlash','callback_data'=>"tasdiqlash"]]
-                ]);
-                $bot->sendMessage($chatId, "Tasdiqlandi. Yana qaysi vaqtlarni tanladi", false, null, false, $vaqtlar_btn);
-                $bot->deleteMessage($chatId, $messageId);
+            $oldbuyurtmachiId = explode('_', $data)[3];;
+            $vaqt = explode('_', $data)[4];
+//            $connection->query("insert into vaqtlar (stadion_id, consumer, vaqt, kun) values ('$stadion_id', '$oldbuyurtmachiId', '$vaqt', '$kun')");
+            $myfile = fopen("vaqt/$chatId.txt", "a") or die("Unable to open file!");
+            fwrite($myfile, "insert into vaqtlar (stadion_id, consumer, vaqt, kun) values ('$stadion_id', '$oldbuyurtmachiId', '$vaqt', '$kun')###");
+            fclose($myfile);
+            $vaqtMassiv = [];
+            foreach ($vaqtlar_massiv as $key => $item) {
+                $vaqtNow = $connection->query("select vaqt from vaqtlar where kun = '$kun' and vaqt = '$item'")->num_rows;
+                if ($vaqtNow == 0){
+                    if ($vaqt == $item){
+                        $vaqtMassiv[]= ['text'=>"$item ✅", "callback_data"=>"NewVaqt"."_$kun"."_$stadion_id"."_$oldbuyurtmachiId"."_$item"];
+                    }else{
+                        $vaqtMassiv[]= ['text'=>"$item", "callback_data"=>"NewVaqt"."_$kun"."_$stadion_id"."_$oldbuyurtmachiId"."_$item"];
+                    }
+                }
             }
+            $vaqt_chunk = array_chunk($vaqtMassiv, '4');
+            $vaqt_chunk[]= [['text'=>"Tasdiqlash", "callback_data"=>"tasdiqlash"."_$kun"."_$stadion_id"."_$oldbuyurtmachiId"."_$item"]];
+            $btn = new \TelegramBot\Api\Types\Inline\InlineKeyboardMarkup($vaqt_chunk);
+
+            $bot->sendMessage($chatId, "Tasdiqlandi. Yana qaysi vaqtlarni tanladi", false, null, false, $btn);
+            $bot->deleteMessage($chatId, $messageId);
         }
 
 
