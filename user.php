@@ -2,8 +2,8 @@
 require_once __DIR__ . '/vendor/autoload.php';
 include "config.php";
 
-$botToken = "5812515378:AAF8J9hvRbx5EULNJZ3I49jNg5slJIgIJT0";
-// https://api.telegram.org/bot5812515378:AAF8J9hvRbx5EULNJZ3I49jNg5slJIgIJT0/setWebhook?url=https://7c15-213-230-80-250.eu.ngrok.io/projects/stadion_bot/user.php
+$botToken = "5823532001:AAFe5Y1I1JsmxC8XoUc2aPiRqtmuf83oek8";
+// https://api.telegram.org/bot5823532001:AAFe5Y1I1JsmxC8XoUc2aPiRqtmuf83oek8/setWebhook?url=https://31b3-213-230-102-85.eu.ngrok.io/projects/stadion_bot/user.php
 
 $bot = new \TelegramBot\Api\Client($botToken);
 
