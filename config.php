@@ -1,4 +1,5 @@
 <?php
+date_default_timezone_set("Asia/Tashkent");
 
 $connection = mysqli_connect('localhost', 'root', '', 'stadion');
 
@@ -15,17 +16,9 @@ $vaqtlar_massiv = ['7:00 - 7:30', '7:30 - 8:00', '8:00 - 8:30', '8:30 - 9:00', '
 
 function boshMenu($chat_id, $messageId, $connection, $bot, $deleteMessage = true)
 {
-    $tuman = $connection->query("select tuman from consumer where  chat_id ='$chat_id'")->fetch_assoc()['tuman'];
-    $stadions = $connection->query("select * from stadions where tuman = '$tuman'")->fetch_all();
-
-    $buttons = [];
-    foreach ($stadions as $stadion) {
-        $buttons[] = ['text' => "🏟 $stadion[1]", "callback_data" => "stadionInfo_$stadion[0]"];
-    }
-    $chunkB = array_chunk($buttons, 2);
-    array_unshift($chunkB, [['text' => "⚙ Sozlamalar", "callback_data" => "settings"]]);
-    $sButtons = new \TelegramBot\Api\Types\Inline\InlineKeyboardMarkup($chunkB);
-    $bot->sendMessage($chat_id, "Buyurtmalaringiz ro'yxatini ko'rish uchun /buyurtmalarim buyrug'ini bering. Yangi buyurtma berish uchun berish uchun stadionlardan birini tanlang:", null, false, null, $sButtons);
+//    $connection->query("update consumer set status = '0' where chat_id = '$chat_id'");
+    $buttons = new  \TelegramBot\Api\Types\ReplyKeyboardMarkup([[['text' => "🏟 Stadionlar"],['text' => "🛒 Buyurtmalarim"]],[['text' => "⚙ Sozlamalar"]]],false,true);
+    $bot->sendMessage($chat_id, "Buyurtmalaringiz ro'yxatini ko'rish uchun  🛒 Buyurtmalarim, yangi buyurtma berish uchun  🏟 Stadionlar  tugmasini bosing.", null, false, null, $buttons);
     if ($deleteMessage) {
         $bot->deleteMessage($chat_id, $messageId);
     }

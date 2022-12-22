@@ -10,7 +10,6 @@ $botToken = "5812515378:AAF8J9hvRbx5EULNJZ3I49jNg5slJIgIJT0";
  */
 
 $bot = new \TelegramBot\Api\Client($botToken);
-date_default_timezone_set("Asia/Tashkent");
 
 $bot->command('start', static function (\TelegramBot\Api\Types\Message $message) use ($removeButton, $connection, $bot) {
     try {
