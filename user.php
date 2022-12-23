@@ -3,12 +3,16 @@ require_once __DIR__ . '/vendor/autoload.php';
 include "config.php";
 
 $botToken = "5823532001:AAFe5Y1I1JsmxC8XoUc2aPiRqtmuf83oek8";
-// https://api.telegram.org/bot5823532001:AAFe5Y1I1JsmxC8XoUc2aPiRqtmuf83oek8/setWebhook?url=https://a4c5-213-230-80-249.eu.ngrok.io/projects/stadion_bot/user.php
+$adminBotToken = "5812515378:AAF8J9hvRbx5EULNJZ3I49jNg5slJIgIJT0";
+
+// https://api.telegram.org/bot5823532001:AAFe5Y1I1JsmxC8XoUc2aPiRqtmuf83oek8/setWebhook?url=https://051e-84-54-92-168.eu.ngrok.io/projects/stadion_bot/user.php
 
 $bot = new \TelegramBot\Api\Client($botToken);
+$admin_bot = new \TelegramBot\Api\Client($adminBotToken);
 
 /**
  * @var $bot \TelegramBot\Api\Client | \TelegramBot\Api\BotApi
+ * @var $admin_bot \TelegramBot\Api\Client | \TelegramBot\Api\BotApi
  */
 
 $bot->command('start', static function (\TelegramBot\Api\Types\Message $message) use ($removeButton, $bot, $connection) {
@@ -40,7 +44,7 @@ $bot->command('start', static function (\TelegramBot\Api\Types\Message $message)
     }
 });
 
-$bot->callbackQuery(static function (\TelegramBot\Api\Types\CallbackQuery $callbackquery) use ($vaqtlar_massiv, $bot, $connection) {
+$bot->callbackQuery(static function (\TelegramBot\Api\Types\CallbackQuery $callbackquery) use ($admin_bot, $vaqtlar_massiv, $bot, $connection) {
     try {
         $chat_id = $callbackquery->getMessage()->getChat()->getId();
         $data = $callbackquery->getData();
@@ -189,7 +193,6 @@ $bot->callbackQuery(static function (\TelegramBot\Api\Types\CallbackQuery $callb
 
         }
         if (strpos($data, "NewVaqt_") !== false) {
-            var_dump(explode("_", $data));
             $kun = explode("_", $data)[1];
             $stadion_id = explode("_", $data)[2];
             $vaqt = explode("_", $data)[3];
@@ -270,7 +273,14 @@ $bot->callbackQuery(static function (\TelegramBot\Api\Types\CallbackQuery $callb
                     $kun = $valuArr[2];
                     $vaqtNow = $connection->query("select vaqt from vaqtlar where kun = '$kun' and vaqt = '$vaqt'")->num_rows;
                     if ($vaqtNow == 0) {
-                        $connection->query("insert into vaqtlar (stadion_id, consumer, vaqt, kun) values ('$stadion_id', '$oldbuyurtmachiId', '$vaqt', '$kun')");
+                        $test = $connection->query("insert into vaqtlar (stadion_id, consumer, vaqt, kun) values ('$stadion_id', '$oldbuyurtmachiId', '$vaqt', '$kun')");
+                        if ($test){
+                            $admin_id = $connection->query("select user_id from stadions where id = '$stadion_id'")->fetch_assoc()["user_id"];
+                            $adminUser = $connection->query("select * from users where id = '$admin_id'")->fetch_assoc()["chat_id"];
+                            $buyurtmachi_name=$connection->query("select * from consumer where id = '$oldbuyurtmachiId'")->fetch_assoc()['name'];
+                            $buyurtmachi_phone=$connection->query("select * from consumer where id = '$oldbuyurtmachiId'")->fetch_assoc()['phone'];
+                            $admin_bot->sendMessage($adminUser,"📅 Kun: $kun\n⏰ Vaqt: $vaqt\n👨‍💼 Buyurtmachining ismi: $buyurtmachi_name\n📲 Telefon raqami: $buyurtmachi_phone");
+                        }
                     }
                 }
                 $btn = new \TelegramBot\Api\Types\Inline\InlineKeyboardMarkup([[['text' => "Orqaga 🔙", "callback_data" => "buyTime_$stadion_id"], ['text' => "Bosh Menu 🏘", "callback_data" => "boshMenu"]]]);
