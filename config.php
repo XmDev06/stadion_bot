@@ -52,6 +52,6 @@ function adminMenu($chat_id, $bot, $connection)
 
     $removeButton = new \TelegramBot\Api\Types\ReplyKeyboardRemove(true);
     $b = new \TelegramBot\Api\Types\Inline\InlineKeyboardMarkup($button);
-    $bot->sendMessage($chat_id, "Xush kelibsiz $name, bo'limlardan birini tanlang", null, false, false, $b);
+    $bot->sendMessage($chat_id, "$name, bo'limlardan birini tanlang", null, false, false, $b);
 
 }

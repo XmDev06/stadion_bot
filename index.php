@@ -3,7 +3,7 @@ require_once __DIR__ . '/vendor/autoload.php';
 include 'config.php';
 
 $botToken = "5812515378:AAF8J9hvRbx5EULNJZ3I49jNg5slJIgIJT0";
-// https://api.telegram.org/bot5812515378:AAF8J9hvRbx5EULNJZ3I49jNg5slJIgIJT0/setWebhook?url=https://051e-84-54-92-168.eu.ngrok.io/projects/stadion_bot/index.php
+// https://api.telegram.org/bot5812515378:AAF8J9hvRbx5EULNJZ3I49jNg5slJIgIJT0/setWebhook?url=https://0935-213-230-100-150.eu.ngrok.io/projects/stadion_bot/index.php
 
 /**
  * @var $bot \TelegramBot\Api\Client | \TelegramBot\Api\BotApi
@@ -259,7 +259,6 @@ $bot->callbackQuery(static function (\TelegramBot\Api\Types\CallbackQuery $callb
             $kun = explode("_", $data)[2];
             $vaqtlar = $connection->query("select * from vaqtlar where stadion_id = '$stadion_id' and kun = '$kun' order by vaqt")->fetch_all();
             $gtime = date("H");
-            $buttonEdit = new \TelegramBot\Api\Types\Inline\InlineKeyboardMarkup([[['text' => "Vaqt band qilish 🖇", 'callback_data' => "buyTime_$stadion_id" . "_$kun"]], [['text' => "Orqaga 🔙", 'callback_data' => "stdVaqtlari_$stadion_id"]]]);
 
             if (count($vaqtlar) != 0) {
                 $no = 0;
@@ -275,9 +274,18 @@ $bot->callbackQuery(static function (\TelegramBot\Api\Types\CallbackQuery $callb
 
                         if ($gtime - 1 <= $soat) {
                             if (($key + 1) == count($vaqtlar)) {
+                                $buttonEdit = new \TelegramBot\Api\Types\Inline\InlineKeyboardMarkup([
+                                    [
+                                        ['text' => "Vaqt band qilish 🖇", 'callback_data' => "buyTime_$stadion_id" . "_$kun"]
+                                    ],
+                                    [
+                                        ['text' => "vaqtni bekor qilish ❌", 'callback_data' => "deleteVaqt_$vaqt[0]"],
+                                        ['text' => "Orqaga 🔙", 'callback_data' => "stdVaqtlari_$stadion_id"]]
+                                ]);
                                 $bot->sendMessage($chatId, $text, false, false, null, $buttonEdit);
                             } else {
-                                $bot->sendMessage($chatId, $text);
+                                $b = new \TelegramBot\Api\Types\Inline\InlineKeyboardMarkup([[['text' => "vaqtni bekor qilish ❌", 'callback_data' => "deleteVaqt_$vaqt[0]"]]]);
+                                $bot->sendMessage($chatId, $text, null, false, null, $b);
                             }
                             $no = 0;
                         } else {
@@ -293,11 +301,13 @@ $bot->callbackQuery(static function (\TelegramBot\Api\Types\CallbackQuery $callb
                     }
                 }
                 if ($no != 0) {
-                    $bot->sendMessage($chatId, "Band qilingan vaqtlar yo'q", null, false, null, $buttonEdit);
+                    $home = new  \TelegramBot\Api\Types\Inline\InlineKeyboardMarkup([[['text' => "Orqaga 🔙", 'callback_data' => "stdVaqtlari_$stadion_id"]]]);
+                    $bot->sendMessage($chatId, "Band qilingan vaqtlar yo'q", null, false, null, $home);
                 }
 
             } else {
-                $bot->sendMessage($chatId, "Bu kun uchun <b>hech qanday vaqt band qilinmagan!</b>", "HTML", false, null, $buttonEdit);
+                $home = new  \TelegramBot\Api\Types\Inline\InlineKeyboardMarkup([[['text' => "Orqaga 🔙", 'callback_data' => "stdVaqtlari_$stadion_id"]]]);
+                $bot->sendMessage($chatId, "Bu kun uchun <b>hech qanday vaqt band qilinmagan!</b>", "HTML", false, null, $home);
             }
             $bot->deleteMessage($chatId, $messageId);
         }
@@ -310,6 +320,16 @@ $bot->callbackQuery(static function (\TelegramBot\Api\Types\CallbackQuery $callb
             $bot->sendMessage($chatId, "Vaqt band qilish uchun buyurtmachining telefon raqamini kiriting (Na'muna: 998993337744):", null, false, null, $b);
             $bot->deleteMessage($chatId, $messageId);
         }
+        if (strpos($data, "deleteVaqt_") !== false){
+            $vaqt_id = explode("_", $data)[1];
+            $test = $connection->query("DELETE FROM `vaqtlar` WHERE id = '$vaqt_id'");
+            if ($test){
+                $bot->sendMessage($chatId,"Vaqt bekor qilindi ✅");
+                $bot->deleteMessage($chatId,$messageId);
+                adminMenu($chatId,$bot,$connection);
+            }
+        }
+
         ///////////   STADION vaqtlari  END //////////////////
 
 
