@@ -48,6 +48,7 @@ function adminMenu($chat_id, $bot, $connection)
         $button[0][] = ["text" => "🏟 $stadion[1]", "callback_data" => "stadion_$stadion[0]"];
     }
     array_push($button[0], ["text" => '🆕 Stadion yaratish', "callback_data" => "createStd"]);
+    array_push($button[0], ["text" => '🛑 Logout', "callback_data" => "logout"]);
     $button = array_chunk($button[0], 2);
 
     $removeButton = new \TelegramBot\Api\Types\ReplyKeyboardRemove(true);
