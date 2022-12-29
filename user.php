@@ -5,7 +5,7 @@ include "config.php";
 $botToken = "5823532001:AAFe5Y1I1JsmxC8XoUc2aPiRqtmuf83oek8";
 $adminBotToken = "5812515378:AAF8J9hvRbx5EULNJZ3I49jNg5slJIgIJT0";
 
-// https://api.telegram.org/bot5823532001:AAFe5Y1I1JsmxC8XoUc2aPiRqtmuf83oek8/setWebhook?url=https://478b-213-230-82-185.eu.ngrok.io/projects/stadion_bot/user.php
+// https://api.telegram.org/bot5823532001:AAFe5Y1I1JsmxC8XoUc2aPiRqtmuf83oek8/setWebhook?url=https://e4a0-213-230-100-196.eu.ngrok.io/projects/stadion_bot/user.php
 
 $bot = new \TelegramBot\Api\Client($botToken);
 $admin_bot = new \TelegramBot\Api\Client($adminBotToken);
@@ -18,27 +18,23 @@ $admin_bot = new \TelegramBot\Api\Client($adminBotToken);
 $bot->command('start', static function (\TelegramBot\Api\Types\Message $message) use ($removeButton, $bot, $connection) {
     try {
         $chat_id = $message->getChat()->getId();
-        $firstname = $message->getChat()->getFirstName();
         $messageId = $message->getMessageId();
         $bot->sendPhoto($chat_id, "https://i.eurosport.com/2013/05/01/1000505-19249060-2560-1440.jpg", "Assalom Alaykum, Endi siz stadionlardan vaqt olish uchun ortiqcha vaqt sarflashingiz shart emas. Siz bu bot orqali yon atrofingizdagi stadionlardan vaqt band qilishingiz mumkin. Marhamat sinab ko'ring!\n\n@stadion_user_bot", null, $removeButton);
 
         boshMenu($chat_id, $messageId, $connection, $bot, false);
 
+    } catch (Exception $exception) {
+        //
+    }
+});
+$bot->command('help', static function (\TelegramBot\Api\Types\Message $message) use ($removeButton, $bot, $connection) {
+    try {
+        $chat_id = $message->getChat()->getId();
+        $messageId = $message->getMessageId();
 
-//        $userN = $connection->query("select * from consumer where chat_id = '$chat_id'")->num_rows;
-//        $user = $connection->query("select * from consumer where chat_id = '$chat_id'")->fetch_assoc();
-//        if ($userN == 0 || $user['phone'] === null || $user['name'] === null) {
-//            if ($userN == 0) {
-//                $connection->query("insert into consumer(chat_id, viloyat) values ('$chat_id', '1')");
-//            }
-//
-//            $button = new \TelegramBot\Api\Types\ReplyKeyboardMarkup([[['text' => "Kontaktni ulashish ⤴", "request_contact" => true]]], true, true);
-//            $bot->sendMessage($chat_id, "Siz bilan bog'lanishimiz uchun << Kontaktni ulashish >> tugmasi orqali yoki o'zingiz telefon raqamingizni yuboring", null, false, null, $button);
-//            $connection->query("update consumer set status = 'phone' where chat_id = '$chat_id'");
-//        } else {
-//            boshMenu($chat_id, $messageId, $connection, $bot, false);
-//        }
+        $bot->sendMessage($chat_id,"Botdan foydalanishda savollar yoki muammolar bo'layotgan bo'lsa adminlardan biriga murojaat qiling:\n@humoyunmirzo_7979\n@azamjon2104");
 
+        boshMenu($chat_id, $messageId, $connection, $bot, false);
     } catch (Exception $exception) {
         //
     }
@@ -185,7 +181,7 @@ $bot->callbackQuery(static function (\TelegramBot\Api\Types\CallbackQuery $callb
             }
 
 
-            $vaqtMassiv = array_chunk($vaqtMassiv, '3');
+            $vaqtMassiv = array_chunk($vaqtMassiv, '2');
             $vaqtMassiv[] = [['text' => "Orqaga 🔙", 'callback_data' => "buyTime_$stadion_id" . "_$tuman_id"]];
 
             $btn = new \TelegramBot\Api\Types\Inline\InlineKeyboardMarkup($vaqtMassiv);
@@ -237,7 +233,7 @@ $bot->callbackQuery(static function (\TelegramBot\Api\Types\CallbackQuery $callb
                 }
             }
 
-            $vaqt_chunk = array_chunk($vaqtMassiv, '3');
+            $vaqt_chunk = array_chunk($vaqtMassiv, '2');
             $vaqt_chunk[] = [['text' => "Tasdiqlash ✅", "callback_data" => "vaqtConfirm"], ['text' => "Bekor qilish ❌", "callback_data" => "vaqtCancle_$tuman_id" . "_$stadion_id"]];
             $btn = new \TelegramBot\Api\Types\Inline\InlineKeyboardMarkup($vaqt_chunk);
 
@@ -352,21 +348,19 @@ $bot->callbackQuery(static function (\TelegramBot\Api\Types\CallbackQuery $callb
 
         /////////////// Buy Time End //////////////////
 
-        ///////////// Settings start ///////////
+        ////// Settings //////
+        if ($data == "nameUpdate") {
+            $connection->query("update consumer set status ='nameUpdate' where chat_id='$chat_id'");
+            $bot->sendMessage($chat_id, "Ismingizni kiriting: ");
+            $bot->deleteMessage($chat_id, $messageId);
 
-        if ($data == "settings") {
-            $user = $connection->query("select * from consumer where chat_id = '$chat_id'")->fetch_all()[0];
-            $viloyat = $connection->query("select name from viloyatlars where id = '$user[5]'")->fetch_assoc()['name'];
-            $tuman = $connection->query("select name from tumanlars where id = '$user[6]'")->fetch_assoc()['name'];
-
-            var_dump($user);
-            $text = "Sizning ma'lumotlaringiz:\n\n🆔 Ismingiz: $user[2]\n📲 Telefon raqamingiz: $user[3]\n🗺 Yashash joyingiz: $viloyat viloyati, $tuman tumani\n📍 Manzilingiz: $user[4]\n";
-
-            $bot->sendMessage($chat_id, $text);
-//            $bot->deleteMessage($chat_id,$messageId);
+        }
+        if ($data == "phoneUpdate") {
+            $connection->query("update consumer set status ='phoneUpdate' where chat_id='$chat_id'");
+            $bot->sendMessage($chat_id, "Telefon raqamingizni kiriting: ",null,false,null,new \TelegramBot\Api\Types\ReplyKeyboardMarkup([[['text' => "Kontaktni ulashish ⤴", "request_contact" => true]]], true, true));
+            $bot->deleteMessage($chat_id, $messageId);
         }
 
-        ///////////// Settings start ///////////
     } catch (Exception $exception) {
         //
     }
@@ -374,7 +368,7 @@ $bot->callbackQuery(static function (\TelegramBot\Api\Types\CallbackQuery $callb
 
 $bot->on(static function () {
 },
-    static function (\TelegramBot\Api\Types\Update $update) use ($admin_bot, $bot, $connection) {
+    static function (\TelegramBot\Api\Types\Update $update) use ($vaqtlar_massiv, $admin_bot, $bot, $connection) {
         try {
             $chat_id = $update->getMessage()->getChat()->getId();
             $text = $update->getMessage()->getText();
@@ -383,7 +377,7 @@ $bot->on(static function () {
 
             /////////////// Login Start ///////////////////////
 
-            if (strpos($status, "phone") !== false) {
+            if (strpos($status, "phone_") !== false) {
                 $confirm = explode("_", $status)[1];
 
                 if ($text) {
@@ -392,7 +386,9 @@ $bot->on(static function () {
                         $phone_number = $text;
                         $bot->sendMessage($chat_id, "Ismingizni kiriting ");
                     } else {
-                        $bot->sendMessage($chat_id, "❗️ Iltimos, telefon raqamni namunadagidek kiriting(Na'muna: 998338885544)");
+                        if ($text != "⚙ Sozlamalar" & $text != "🛒 Buyurtmalarim" & $text != "🏟 Stadionlar") {
+                            $bot->sendMessage($chat_id, "❗️ Iltimos, telefon raqamni namunadagidek kiriting(Na'muna: 998338885544)");
+                        }
                     }
                 } else {
                     $phone_number = $update->getMessage()->getContact()->getPhoneNumber();
@@ -404,7 +400,7 @@ $bot->on(static function () {
                     $connection->query("update consumer set phone = '$phone_number', status = 'name' where chat_id = '$chat_id'");
                 }
             }
-            if (strpos($status, "name") !== false) {
+            if (strpos($status, "name_") !== false) {
                 $confirm = explode("_", $status)[1];
 
                 $filter = preg_match("/^[a-zA-Z '`‘]*$/", $text);
@@ -419,11 +415,18 @@ $bot->on(static function () {
                         boshMenu($chat_id, $messageId, $connection, $bot);
                     }
                 } else {
-                    $bot->sendMessage($chat_id, "❗Ismda faqat harflar qatnashgan so'zlardan foydalaning");
+                    if ($text != "⚙ Sozlamalar" & $text != "🛒 Buyurtmalarim" & $text != "🏟 Stadionlar") {
+                        $bot->sendMessage($chat_id, "❗Ismda faqat harflar qatnashgan so'zlardan foydalaning");
+                    }
                 }
             }
 
+            /////////////// Login End //////////////
+
+            ////////////// Menu ///////////////////
             if ($text == "🏟 Stadionlar") {
+                $connection->query("update consumer set status = '0' where chat_id ='$chat_id'");
+
                 $tumanlar = $connection->query("select * from tumanlars where viloyat_id ='1'")->fetch_all();
                 $button = [];
                 foreach ($tumanlar as $tuman) {
@@ -435,6 +438,21 @@ $bot->on(static function () {
                 $bot->deleteMessage($chat_id, $messageId);
             }
             if ($text == "🛒 Buyurtmalarim") {
+                $connection->query("update consumer set status = '0' where chat_id ='$chat_id'");
+
+                ///////////del old times ////////////
+                $kun = date("d-m-Y");
+                $vaqt = date("H");
+
+                $connection->query("DELETE FROM `vaqtlar` WHERE kun < '$kun'");
+                foreach ($vaqtlar_massiv as $item) {
+                    $e = explode(":", explode(" - ", $item)[1])[0];
+                    if ($e < ($vaqt - 1) && $e != 00 && $e != 1 && $e != 2) {
+                        $connection->query("DELETE FROM `vaqtlar` WHERE kun = '$kun' and vaqt = '$item'");
+                    }
+                }
+                ///////////del old times end////////////
+
                 $user_id = $connection->query("select * from consumer where chat_id='$chat_id'")->fetch_assoc()['id'];
                 $vaqtlar = $connection->query("select * from vaqtlar where consumer ='$user_id'")->fetch_all();
                 var_dump(count($vaqtlar));
@@ -456,10 +474,19 @@ $bot->on(static function () {
                 }
 
             }
-            if ($text == "⚙️ Sozlamalar") {
+            if ($text == "⚙ Sozlamalar") {
+                $connection->query("update consumer set status = '0' where chat_id ='$chat_id'");
 
+                $user = $connection->query("select * from consumer where chat_id = '$chat_id'")->fetch_all()[0];
+                $viloyat = $connection->query("select name from viloyatlars where id = '$user[5]'")->fetch_assoc()['name'];
+                $tuman = $connection->query("select name from tumanlars where id = '$user[6]'")->fetch_assoc()['name'];
+
+                $btn = new  \TelegramBot\Api\Types\Inline\InlineKeyboardMarkup([[['text' => "Ismni o'zgartirish", "callback_data" => "nameUpdate"]], [['text' => "Raqamni o'zgartirish", "callback_data" => "phoneUpdate"]]]);
+                $text = "Sizning ma'lumotlaringiz:\n\n🪪 Ismingiz: $user[2]\n📲 Telefon raqamingiz: $user[3]\n\nO'zgartirish uchun bo'limlardan birini tanlang 👇";
+
+                $bot->sendMessage($chat_id, $text, null, false, null, $btn);
             }
-            /////////////// Login End //////////////////////
+
 
             if ($status == "vaqtConfirmPhone") {
                 $filter_number = preg_match("/^[0-9]{12,12}/", $text);
@@ -494,6 +521,42 @@ $bot->on(static function () {
                     $bot->sendMessage($chat_id, "❗️ Iltimos, telefon raqamni namunadagidek kiriting(Na'muna: 998338885544)");
                 }
             }
+
+
+            //////// Settings ////////
+            if ($status == "nameUpdate") {
+                $filter = preg_match("/^[a-zA-Z '`‘]*$/", $text);
+
+                if ($filter === 1) {
+                    $rep_text = str_replace("'", "\'", $text);
+                    $connection->query("update consumer set name = '$rep_text', status = '0' where chat_id ='$chat_id'");
+                    $bot->deleteMessage($chat_id, $messageId - 1);
+                    boshMenu($chat_id, $messageId, $connection, $bot);
+                } else {
+                    if ($text != "⚙ Sozlamalar" & $text != "🛒 Buyurtmalarim" & $text != "🏟 Stadionlar") {
+                        $bot->sendMessage($chat_id, "❗Ismda faqat harflar qatnashgan so'zlardan foydalaning");
+                    }
+                }
+            }
+            if ($status == "phoneUpdate") {
+                if ($text) {
+                    $filter_number = preg_match("/^[0-9]{12,12}/", $text);
+                    if ($filter_number === 1) {
+                        $phone_number = $text;
+                    } else {
+                        if ($text != "⚙ Sozlamalar" & $text != "🛒 Buyurtmalarim" & $text != "🏟 Stadionlar") {
+                            $bot->sendMessage($chat_id, "❗️ Iltimos, telefon raqamni namunadagidek kiriting(Na'muna: 998338885544)");
+                        }
+                    }
+                } else {
+                    $phone_number = $update->getMessage()->getContact()->getPhoneNumber();
+                }
+                if ($phone_number) {
+                    $connection->query("update consumer set phone = '$phone_number', status = '0' where chat_id = '$chat_id'");
+                    boshMenu($chat_id, $messageId, $connection, $bot);
+                }
+            }
+            //////// Settings ////////
 
         } catch (Exception $exception) {
             //

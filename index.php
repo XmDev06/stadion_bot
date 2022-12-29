@@ -3,7 +3,7 @@ require_once __DIR__ . '/vendor/autoload.php';
 include 'config.php';
 
 $botToken = "5812515378:AAF8J9hvRbx5EULNJZ3I49jNg5slJIgIJT0";
-// https://api.telegram.org/bot5812515378:AAF8J9hvRbx5EULNJZ3I49jNg5slJIgIJT0/setWebhook?url=https://478b-213-230-82-185.eu.ngrok.io/projects/stadion_bot/index.php
+// https://api.telegram.org/bot5812515378:AAF8J9hvRbx5EULNJZ3I49jNg5slJIgIJT0/setWebhook?url=https://e4a0-213-230-100-196.eu.ngrok.io/projects/stadion_bot/index.php
 
 /**
  * @var $bot \TelegramBot\Api\Client | \TelegramBot\Api\BotApi
@@ -26,6 +26,17 @@ $bot->command('start', static function (\TelegramBot\Api\Types\Message $message)
         //
     }
 });
+$bot->command('help', static function (\TelegramBot\Api\Types\Message $message) use ($removeButton, $bot, $connection) {
+    try {
+        $chat_id = $message->getChat()->getId();
+        $bot->sendMessage($chat_id,"Botdan foydalanishda savollar yoki muammolar bo'layotgan bo'lsa adminlardan biriga murojaat qiling:\n@humoyunmirzo_7979\n@azamjon2104");
+
+        adminMenu($chat_id, $bot, $connection);
+    } catch (Exception $exception) {
+        //
+    }
+});
+
 
 
 $bot->callbackQuery(static function (\TelegramBot\Api\Types\CallbackQuery $callbackquery) use ($removeButton, $vaqtlar_massiv, $connection, $bot) {
@@ -365,7 +376,7 @@ $bot->callbackQuery(static function (\TelegramBot\Api\Types\CallbackQuery $callb
             }
 
 
-            $vaqtMassiv = array_chunk($vaqtMassiv, '3');
+            $vaqtMassiv = array_chunk($vaqtMassiv, '2');
             $vaqtMassiv[] = [['text' => "Orqaga 🔙", 'callback_data' => "stdVaqtlari_$stadion_id"]];
 
             $btn = new \TelegramBot\Api\Types\Inline\InlineKeyboardMarkup($vaqtMassiv);
@@ -415,7 +426,7 @@ $bot->callbackQuery(static function (\TelegramBot\Api\Types\CallbackQuery $callb
                 }
             }
 
-            $vaqt_chunk = array_chunk($vaqtMassiv, '3');
+            $vaqt_chunk = array_chunk($vaqtMassiv, '2');
             $vaqt_chunk[] = [['text' => "Tasdiqlash ✅", "callback_data" => "vaqtConfirm"], ['text' => "Bekor qilish ❌", "callback_data" => "vaqtCancle_$stadion_id"]];
             $btn = new \TelegramBot\Api\Types\Inline\InlineKeyboardMarkup($vaqt_chunk);
 
@@ -817,7 +828,7 @@ $bot->on(static function () {
                             }
                         }
                     }
-                    $vaqtMassiv = array_chunk($vaqtMassiv, '3');
+                    $vaqtMassiv = array_chunk($vaqtMassiv, '2');
                     $vaqtMassiv[] = [['text' => "Orqaga 🔙", 'callback_data' => "stdVaqtlari_$stadion_id"]];
 
                     $btn = new \TelegramBot\Api\Types\Inline\InlineKeyboardMarkup($vaqtMassiv);
